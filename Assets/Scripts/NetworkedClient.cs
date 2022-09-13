@@ -4,7 +4,7 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public class NetworkedServerClient : MonoBehaviour
+public class NetworkedClient : MonoBehaviour
 {
 
     int connectionID;
@@ -79,7 +79,7 @@ public class NetworkedServerClient : MonoBehaviour
             hostID = NetworkTransport.AddHost(topology, 0);
             Debug.Log("Socket open.  Host ID = " + hostID);
 
-            connectionID = NetworkTransport.Connect(hostID, "192.168.2.11", socketPort, 0, out error); // server is local on network
+            connectionID = NetworkTransport.Connect(hostID, "10.0.247.242", socketPort, 0, out error); // server is local on network
 
             if (error == 0)
             {
