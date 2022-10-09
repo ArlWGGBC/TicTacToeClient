@@ -14,7 +14,7 @@ public class DisconnectedState : StateMachine
 
     public override IEnumerator Start()
     {
-        _system.hud.SetUIText("Disconnected");
+        _system.hud.SetUIText("Create an Account");
         Debug.Log("Test");
         yield return new WaitForSeconds(2f);
         
@@ -28,7 +28,6 @@ public class DisconnectedState : StateMachine
     {
         _system.AccountName = _system.hud.GetNameInput();
         _system.NameSet = true;
-        Debug.Log(_system.AccountName);
         yield return new WaitForSeconds(2f);
     }
     
@@ -36,9 +35,9 @@ public class DisconnectedState : StateMachine
     {
         _system.AccountPassword = _system.hud.GetPasswordInput();
         _system.PasswordSet = true;
-        Debug.Log(_system.AccountPassword);
         yield return new WaitForSeconds(2f);
     }
+    
 
     public override IEnumerator CheckAccount()
     {
@@ -46,11 +45,10 @@ public class DisconnectedState : StateMachine
         if (!_system.NameSet || !_system.PasswordSet)
         {
             _system.hud.SetUIText("Need both account name and password");
-            Debug.Log("Need both account name and password");
             yield break;
         }
-            
-            _system.hud.SetUIText("Account created");
+
+            _system.canCreateAccount = true;
             _system.CreateAccount();
         
             
