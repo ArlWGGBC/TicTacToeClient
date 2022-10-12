@@ -6,9 +6,9 @@ using System.Text;
 using System.IO;
 using Unity.VisualScripting;
 using UnityEngine.UI;
-public class DisconnectedState : StateMachine
+public class CreateAccountState : StateMachine
 {
-    public  DisconnectedState(NetworkedClient system) : base(system)
+    public  CreateAccountState(NetworkedClient system) : base(system)
     {
     }
 

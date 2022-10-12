@@ -118,7 +118,7 @@ public class NetworkedClient : MonoBehaviour
     void Start()
     {
         Connect();
-        SetState(new DisconnectedState(this));
+        SetState(new CreateAccountState(this));
         
     }
 
