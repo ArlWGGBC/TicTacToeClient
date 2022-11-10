@@ -12,11 +12,13 @@ public class ConnectedState : StateMachine
         
     }
     // Start is called before the first frame update
-    public override IEnumerator Start()
+    public override void Start()
     {
-        yield return new WaitForSeconds(1f);
+        
+        Debug.Log("Connected");
+        return;
 
-       
+
     }
 
     // Update is called once per frame

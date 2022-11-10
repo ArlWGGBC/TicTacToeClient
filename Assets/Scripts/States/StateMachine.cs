@@ -12,9 +12,10 @@ public abstract class StateMachine
         _system = system;
     }
         
-    public virtual IEnumerator Start()
+    public virtual void Start()
     {
-        yield break;
+        
+        return;
     }
     
 

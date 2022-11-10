@@ -9,17 +9,18 @@ public class LoggedInState : StateMachine
     {
     }
 
-    public override IEnumerator Start()
+    public override void Start()
     {
         _system.hud.SetUITextLogin("Logged In");
-        yield return new WaitForSeconds(0.5f);
         _system.hud.OnLoggedInScreen();
         _system.AccountID = _system.ConnectionID;
+
+        return;
 
 
 
         //Include UI state changes and any other changes related to starting game.
-        
+
     }
     
     

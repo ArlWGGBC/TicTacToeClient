@@ -9,10 +9,11 @@ public class StartState : StateMachine
     {
     }
 
-    public override IEnumerator Start()
+    public override void Start()
     {
-        yield return new WaitForSeconds(1f);
-        
+
+        return;
+
     }
     
 }

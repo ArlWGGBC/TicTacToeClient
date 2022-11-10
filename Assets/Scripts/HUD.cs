@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -9,10 +10,16 @@ using static TMPro.TextMeshPro;
 
 public class HUD : MonoBehaviour
 {
-
+    [SerializeField] private NetworkedClient _client;
+    
     [SerializeField] private TextMeshProUGUI displayText;
     
     [SerializeField] private TextMeshProUGUI displayTextLogin;
+    
+    [SerializeField] private TextMeshProUGUI playersOnline;
+
+    [SerializeField] public Transform playerListParent;
+    [SerializeField] public PlayerSlot[] playersList;
 
     [SerializeField] private TextMeshProUGUI roomName;
 
@@ -36,11 +43,26 @@ public class HUD : MonoBehaviour
     
     [SerializeField] private GameObject gameRoomPanel;
 
-  
+
+    public List<string> roomnames;
+    
+    private int numberOnline = 0;
     // Start is called before the first frame update
     void Start()
     {
+        playersList = playerListParent.GetComponentsInChildren<PlayerSlot>();
+    }
 
+    public void PopulateRoomNames(string id)
+    {
+        foreach (var slot in playersList)
+        {
+            if (String.IsNullOrEmpty(slot.name))
+            {
+                slot.name = id;
+                break;
+            }
+        }
     }
     public void SetUIText(string text)
     {
@@ -104,6 +126,8 @@ public class HUD : MonoBehaviour
         loginPanel.SetActive(false);
         loggedInPanel.SetActive(false);
         gameRoomPanel.SetActive(true);
+        
+        
 
     }
 
@@ -114,6 +138,30 @@ public class HUD : MonoBehaviour
         loginPanel.SetActive(false);
         loggedInPanel.SetActive(true);
     }
+
+    public void UpdatePlayersOnlineCount(int player)
+    {
+        numberOnline = player;
+        playersOnline.text = ("Players Online : " + numberOnline);
+    }
+
+    public void UserAlreadyExists()
+    {
+        
+    }
+
+    public void SwitchStartScreen()
+    {
+        startPanel.SetActive(true);
+        createAccountPanel.SetActive(false);
+        loginPanel.SetActive(false);
+        gameRoomPanel.SetActive(false);
+        loggedInPanel.SetActive(false);
+        
+        
+        
+    }
+    
 
     // Update is called once per frame
     void Update()

@@ -12,15 +12,15 @@ public class CreateAccountState : StateMachine
     {
     }
 
-    public override IEnumerator Start()
+    public override void Start()
     {
         _system.hud.SetUIText("Create an Account");
-        Debug.Log("Test");
-        yield return new WaitForSeconds(2f);
-        
-           
+        Debug.Log("CreateAccountState");
+        return;
+
+
         //Include UI state changes and any other changes related to starting game.
-        
+
     }
 
 
@@ -41,7 +41,8 @@ public class CreateAccountState : StateMachine
 
     public override IEnumerator CheckAccount()
     {
-
+        
+        Debug.Log("Checking");
         if (!_system.NameSet || !_system.PasswordSet)
         {
             _system.hud.SetUIText("Need both account name and password");
