@@ -55,11 +55,15 @@ public class HUD : MonoBehaviour
 
     public void PopulateRoomNames(string id)
     {
+        if (String.IsNullOrEmpty(id))
+            return;
+        
         foreach (var slot in playersList)
         {
-            if (String.IsNullOrEmpty(slot.name))
+            if (!slot.isFilled)
             {
-                slot.name = id;
+                slot.SetName(id);
+                slot.isFilled = true;
                 break;
             }
         }
@@ -141,8 +145,8 @@ public class HUD : MonoBehaviour
 
     public void UpdatePlayersOnlineCount(int player)
     {
-        numberOnline = player;
-        playersOnline.text = ("Players Online : " + numberOnline);
+        
+        playersOnline.text = ("Players Online : " + player);
     }
 
     public void UserAlreadyExists()
@@ -161,6 +165,7 @@ public class HUD : MonoBehaviour
         
         
     }
+
     
 
     // Update is called once per frame

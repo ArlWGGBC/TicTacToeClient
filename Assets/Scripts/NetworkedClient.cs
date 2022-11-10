@@ -25,12 +25,14 @@ public class NetworkedClient : MonoBehaviour
     
     
     public StateMachine _currentState;
+    
+    [SerializeField]
     public List<GameRoom> _gameRooms; 
     public GameRoom _currentRoom;
    
     
     [SerializeField] public HUD hud;
-
+    [SerializeField] private TextMeshProUGUI _textMeshProUGUI;
     
     
     
@@ -105,7 +107,6 @@ public class NetworkedClient : MonoBehaviour
                 case NetworkEventType.ConnectEvent:
                     Debug.Log("connected.  " + recConnectionID);
                     ourClientID = recConnectionID;
-                    hud.UpdatePlayersOnlineCount(1);
                     //SendDataToHost();
                         
                     break;
@@ -117,7 +118,6 @@ public class NetworkedClient : MonoBehaviour
                 case NetworkEventType.DisconnectEvent:
                     isConnected = false;
                     Debug.Log("disconnected.  " + recConnectionID);
-                    hud.UpdatePlayersOnlineCount(-1);
                     break;
                 case NetworkEventType.BroadcastEvent:
                     break;
@@ -175,52 +175,34 @@ public class NetworkedClient : MonoBehaviour
     {
         string[] message = msg.Split(',', msg.Length);
 
-        Debug.Log("MESSAGE : " + message[2]);
+        Debug.Log(msg);
+
+        _textMeshProUGUI.text = ("Recieved: " + msg);
+
         switch (message[0])
         {
             case "GAMEROOM" :
+                
                 if (message[2] == "Created")
                 {
-                    
-                    Debug.Log("Works");
-
                     var gameRoom = new GameRoom(message[1], "Default");
                     gameRoom.player1ID = id;
                     //Create new game room
-                    _gameRooms.Add(gameRoom);
                     //Set current Room to room we created.
                     _currentRoom = gameRoom;
                     //Tell UI to change and populate screen.
-                    SetRoomName();
-                    
-                }
-                else if (message[2] == "Exists")
-                {
-                    SetRoomName();
-                    _gameRooms.Add(new GameRoom(message[1], "Default"));
-                }
-                else if (message[2] == "Info")
-                {
-                    //For each game room, get info from server and populate game room list.
-                    foreach (var room in _gameRooms)
-                    {
-                        if (room.roomName == message[1])
-                        {
-                            if(String.IsNullOrEmpty(message[3]))
-                                room.player1ID = Convert.ToInt32(message[3]);
-                            if(String.IsNullOrEmpty(message[4]))
-                                room.player2ID = Convert.ToInt32(message[4]);
-                            room.gameType = message[5];
-                        }
-                    }
+                    SetupRoom();
                 }
                 else if (message[2] == "Join")
                 {
-                    /// DO something
+                    var gameRoom = new GameRoom(message[1], "Default");
+                    _currentRoom = gameRoom;
+                    hud.SwitchGameRoomScreen();
+                    SetupRoom();
+                    JoinRoom(message[1], message[3], message[4]);
                 }
                 break;
-            case "PLAYERCOUNT" : 
-                Debug.Log(message[1]);
+            case "PLAYERCOUNT" :
                 hud.UpdatePlayersOnlineCount(Convert.ToInt32(message[1]));
                 break;
             default:
@@ -232,6 +214,42 @@ public class NetworkedClient : MonoBehaviour
         
     }
 
+    
+    public void SetupRoom()
+    {
+        
+        hud.SetRoomName(hud.GetRoomInput());
+        hud.SwitchGameRoomScreen();
+
+        hud.PopulateRoomNames(loginInputName);
+        
+        
+        
+        //Get names to populate in new room... Need to parse through information and set it.
+        
+    }
+    
+    public void CreateRoom()
+    {
+        //SetRoomName();
+        //STEP 1 : When clicking on create game room - send room name to server.
+        SendMessageToHost("GAMEROOM," + hud.GetRoomInput());
+    }
+
+    public void JoinRoom(string roomName, string player1, string player2)
+    {
+        _currentRoom.roomName = roomName;
+        
+        if(String.IsNullOrEmpty(player1))
+            _currentRoom.player1ID = Convert.ToInt32(player1);
+        if(String.IsNullOrEmpty(player2))
+            _currentRoom.player2ID = Convert.ToInt32(player2);
+        _currentRoom.gameType = "Default";
+   
+        hud.SetRoomName(hud.GetRoomInput());
+        hud.PopulateRoomNames(player1);
+        hud.PopulateRoomNames(player2);
+    }
     public bool IsConnected()
     {
         return isConnected;
@@ -253,9 +271,12 @@ public class NetworkedClient : MonoBehaviour
     {
         StartCoroutine(_currentState.CheckAccount());
     }
+    
+       
+   
     //-----------------------------------------------------------------
-    
-    
+ 
+
     
     //Create the account file and set appropriate variables.
     public void CreateAccount()
@@ -342,11 +363,8 @@ public class NetworkedClient : MonoBehaviour
 
     }
     
-/// <summary>
-/// /////////////////////////////////////////////////////////////////
-/// </summary>
 
-    void ResetVariables()
+void ResetVariables()
     {
         NameSet = false;
         PasswordSet = false;
@@ -372,21 +390,7 @@ public class NetworkedClient : MonoBehaviour
         hud.SwitchLogInScreen();
     }
 
-    public void SetRoomName()
-    {
-        hud.SetRoomName(hud.GetRoomInput());
-        hud.SwitchGameRoomScreen();
-        hud.PopulateRoomNames(connectionID.ToString());
-        
-    }
-    
-    public void CreateRoom()
-    {
-        //SetRoomName();
-        //STEP 1 : When clicking on create game room - send room name to server.
-        SendMessageToHost("GAMEROOM," + hud.GetRoomInput());
-    }
-    
+   
     
     //Getters and setters--------------------------------------------
     public string RoomName
@@ -449,13 +453,4 @@ public class NetworkedClient : MonoBehaviour
     }
     
     //End getters and setters----------------------------------------
-}
-
-public enum MessageType
-{
-    GAME,
-    INFO,
-    NETWORK,
-    PLAYERCOUNT,
-    
 }

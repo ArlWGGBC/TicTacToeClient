@@ -9,6 +9,7 @@ public class GameRoom
     public int player1ID;
     public int player2ID;
     public List<int> spectatorIDs;
+    public List<string> playerIDs;
     
     
 
