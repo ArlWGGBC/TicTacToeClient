@@ -44,15 +44,15 @@ public class NetworkedClient : MonoBehaviour
     protected int accountID;
     
     //Used for input on login screen
-    protected string loginInputName;
-    protected string loginInputPassword;
+    protected string LoginInputName;
+    protected string LoginInputPassword;
 
     //booleans for account creation screen
-    protected bool accountNameSet = false;
-    protected bool accountPasswordSet = false;
+    protected bool AccountNameSet = false;
+    protected bool AccountPasswordSet = false;
     
     //connected to account creation booleans
-    protected bool canCreate = true;
+    protected bool CanCreate = true;
 
     
     //roomName local
@@ -182,24 +182,21 @@ public class NetworkedClient : MonoBehaviour
         switch (message[0])
         {
             case "GAMEROOM" :
-                
                 if (message[2] == "Created")
                 {
-                    var gameRoom = new GameRoom(message[1], "Default");
-                    gameRoom.player1ID = id;
-                    //Create new game room
-                    //Set current Room to room we created.
-                    _currentRoom = gameRoom;
-                    //Tell UI to change and populate screen.
-                    SetupRoom();
+                    Debug.Log("CREATED!");
+                    //Populate UI
+                    SetupRoom(message[1]);
+                    //Create Room using info from server.
+                    CreateRoom(message[1], id);
+                   
                 }
                 else if (message[2] == "Join")
                 {
-                    var gameRoom = new GameRoom(message[1], "Default");
-                    _currentRoom = gameRoom;
-                    hud.SwitchGameRoomScreen();
-                    SetupRoom();
-                    JoinRoom(message[1], message[3], message[4]);
+                    Debug.Log("JOINED! " + message[3] + " Game");
+                    SetupRoom(message[1]);
+                    CreateRoom(message[1], Convert.ToInt32(message[3]));
+                    JoinRoom(message[1]);
                 }
                 break;
             case "PLAYERCOUNT" :
@@ -215,40 +212,46 @@ public class NetworkedClient : MonoBehaviour
     }
 
     
-    public void SetupRoom()
+    public void SetupRoom(string roomName)
     {
         
-        hud.SetRoomName(hud.GetRoomInput());
+        hud.SetRoomName(roomName);
         hud.SwitchGameRoomScreen();
-
-        hud.PopulateRoomNames(loginInputName);
-        
-        
-        
-        //Get names to populate in new room... Need to parse through information and set it.
+        //hud.PopulateRoomNames(_currentRoom.playerIDs);
+       //Get names to populate in new room... Need to parse through information and set it.
         
     }
     
-    public void CreateRoom()
+    public void CreateRoom(string roomName, int playerID)
     {
-        //SetRoomName();
-        //STEP 1 : When clicking on create game room - send room name to server.
+        //Create new gameroom
+        var gameRoom = new GameRoom(roomName, "Default")
+        {
+            player1ID = playerID.ToString(),
+            //player2ID = ConnectionID
+        };
+        
+        
+        //Set current Room to room we created.
+        _currentRoom = gameRoom;
+        _currentRoom.playerIDs.Add(playerID.ToString());
+        hud.PopulateRoomNames(_currentRoom.playerIDs);
+    }
+
+    public void Create()
+    {
         SendMessageToHost("GAMEROOM," + hud.GetRoomInput());
     }
 
-    public void JoinRoom(string roomName, string player1, string player2)
+    public void JoinRoom(string roomName)
     {
-        _currentRoom.roomName = roomName;
+        _currentRoom.player2ID = connectionID.ToString();
+        _currentRoom.playerIDs.Add(connectionID.ToString());
+        hud.PopulateRoomNames(_currentRoom.playerIDs);
+
+        var list = _currentRoom.playerIDs;
+        SendMessageToHost("INFO,");
         
-        if(String.IsNullOrEmpty(player1))
-            _currentRoom.player1ID = Convert.ToInt32(player1);
-        if(String.IsNullOrEmpty(player2))
-            _currentRoom.player2ID = Convert.ToInt32(player2);
-        _currentRoom.gameType = "Default";
-   
-        hud.SetRoomName(hud.GetRoomInput());
-        hud.PopulateRoomNames(player1);
-        hud.PopulateRoomNames(player2);
     }
     public bool IsConnected()
     {
@@ -275,14 +278,12 @@ public class NetworkedClient : MonoBehaviour
        
    
     //-----------------------------------------------------------------
- 
-
     
     //Create the account file and set appropriate variables.
     public void CreateAccount()
     {
         Debug.Log("Creating account");
-        if (!canCreate)
+        if (!CanCreate)
             return;
         
         Debug.Log("Successfull");
@@ -406,8 +407,8 @@ void ResetVariables()
     
     public string AccountNameInput
     {
-        get { return loginInputName; }
-        set { loginInputName = value; }
+        get { return LoginInputName; }
+        set { LoginInputName = value; }
     }
     
     public int AccountID
@@ -424,14 +425,14 @@ void ResetVariables()
     
     public string AccountPasswordInput
     {
-        get { return loginInputPassword; }
-        set { loginInputPassword = value; }
+        get { return LoginInputPassword; }
+        set { LoginInputPassword = value; }
     }
     
     public bool canCreateAccount
     {
-        get { return canCreate; }
-        set { canCreate = value; }
+        get { return CanCreate; }
+        set { CanCreate = value; }
     }
     
     public string AccountPassword
@@ -442,14 +443,14 @@ void ResetVariables()
     
     public bool NameSet
     {
-        get { return accountNameSet; }
-        set { accountNameSet = value; }
+        get { return AccountNameSet; }
+        set { AccountNameSet = value; }
     }
 
     public bool PasswordSet
     {
-        get { return accountPasswordSet; }
-        set { accountPasswordSet = value; }
+        get { return AccountPasswordSet; }
+        set { AccountPasswordSet = value; }
     }
     
     //End getters and setters----------------------------------------

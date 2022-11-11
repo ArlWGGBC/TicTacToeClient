@@ -53,20 +53,33 @@ public class HUD : MonoBehaviour
         playersList = playerListParent.GetComponentsInChildren<PlayerSlot>();
     }
 
-    public void PopulateRoomNames(string id)
+    public void PopulateRoomNames(List<string> id)
     {
-        if (String.IsNullOrEmpty(id))
+        Debug.Log(id.Count);
+        if (id.Count <= 0)
             return;
-        
-        foreach (var slot in playersList)
+        else
         {
-            if (!slot.isFilled)
+            foreach (var player in playersList)
             {
-                slot.SetName(id);
-                slot.isFilled = true;
-                break;
+                player.SetName("");
+                player.isFilled = false;
             }
         }
+
+        foreach (var player in id)
+        {
+            foreach (var slot in playersList)
+            {
+                if (!slot.isFilled)
+                {
+                    slot.SetName(player);
+                    slot.isFilled = true;
+                    break;
+                }
+            }
+        }
+        
     }
     public void SetUIText(string text)
     {
