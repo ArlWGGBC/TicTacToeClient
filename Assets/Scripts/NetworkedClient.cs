@@ -2,9 +2,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using TMPro;
 using Unity.VisualScripting;
+using UnityEditor.VersionControl;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.Networking.Match;
@@ -22,8 +24,8 @@ public class NetworkedClient : MonoBehaviour
     byte error;
     bool isConnected = false;
     int ourClientID;
-    
-    
+
+    private MessageType _message;
     public StateMachine _currentState;
     
     [SerializeField]
@@ -58,8 +60,6 @@ public class NetworkedClient : MonoBehaviour
     //roomName local
     protected string roomName;
 
-    
-    
 
     public void SetState(StateMachine state)
     {
@@ -75,6 +75,8 @@ public class NetworkedClient : MonoBehaviour
 
         
         _gameRooms = new List<GameRoom>();
+        _message = new MessageType();
+        
         
         Connect();
         SetState(new CreateAccountState(this));
@@ -107,7 +109,7 @@ public class NetworkedClient : MonoBehaviour
                 case NetworkEventType.ConnectEvent:
                     Debug.Log("connected.  " + recConnectionID);
                     ourClientID = recConnectionID;
-                    //SendDataToHost();
+                    //=SendDataToHost();
                         
                     break;
                 case NetworkEventType.DataEvent:
@@ -173,86 +175,59 @@ public class NetworkedClient : MonoBehaviour
 
     private void ProcessRecievedMsg(string msg, int id)
     {
+        // message[0] == Signifier, message[1] == Room Name, message[2] == Room owner ID(player1)
+        
         string[] message = msg.Split(',', msg.Length);
 
         Debug.Log(msg);
 
         _textMeshProUGUI.text = ("Recieved: " + msg);
 
-        switch (message[0])
+        if (message[0] == _message.Join)
         {
-            case "GAMEROOM" :
-                if (message[2] == "Created")
-                {
-                    Debug.Log("CREATED!");
-                    //Populate UI
-                    SetupRoom(message[1]);
-                    //Create Room using info from server.
-                    CreateRoom(message[1], id);
-                   
-                }
-                else if (message[2] == "Join")
-                {
-                    Debug.Log("JOINED! " + message[3] + " Game");
-                    SetupRoom(message[1]);
-                    CreateRoom(message[1], Convert.ToInt32(message[3]));
-                    JoinRoom(message[1]);
-                }
-                break;
-            case "PLAYERCOUNT" :
-                hud.UpdatePlayersOnlineCount(Convert.ToInt32(message[1]));
-                break;
-            default:
-                Debug.Log(msg);
-                break;
+            //Assign values from message for clarity
+            string roomName = message[1];
+            
+           
+        }
+        else if (message[0] == _message.Create)
+        {
+            //Assign values from message for clarity
+            string roomName = message[1];
+            
+            hud.SwitchGameRoomScreen();
+            hud.SetRoomName(roomName);
             
         }
-        
-        
-    }
-
-    
-    public void SetupRoom(string roomName)
-    {
-        
-        hud.SetRoomName(roomName);
-        hud.SwitchGameRoomScreen();
-        //hud.PopulateRoomNames(_currentRoom.playerIDs);
-       //Get names to populate in new room... Need to parse through information and set it.
-        
-    }
-    
-    public void CreateRoom(string roomName, int playerID)
-    {
-        //Create new gameroom
-        var gameRoom = new GameRoom(roomName, "Default")
+        else if (message[0] == _message.PlayerCount)
         {
-            player1ID = playerID.ToString(),
-            //player2ID = ConnectionID
-        };
-        
-        
-        //Set current Room to room we created.
-        _currentRoom = gameRoom;
-        _currentRoom.playerIDs.Add(playerID.ToString());
-        hud.PopulateRoomNames(_currentRoom.playerIDs);
+            //Send connected players count to all clients
+            Debug.Log("UPDATING PLAYERS :" + " " + Convert.ToInt32(message[1]));
+            hud.UpdatePlayersOnlineCount(Convert.ToInt32(message[1]));
+        }
+        else if (message[0] == _message.Joined)
+        {
+            
+        }
+      
+
+
     }
 
-    public void Create()
+    
+    public void CreateRoom()
     {
-        SendMessageToHost("GAMEROOM," + hud.GetRoomInput());
-    }
-
-    public void JoinRoom(string roomName)
-    {
-        _currentRoom.player2ID = connectionID.ToString();
-        _currentRoom.playerIDs.Add(connectionID.ToString());
-        hud.PopulateRoomNames(_currentRoom.playerIDs);
-
-        var list = _currentRoom.playerIDs;
-        SendMessageToHost("INFO,");
+        SendMessageToHost((_message.Create + "," + hud.GetRoomInput() + "," + connectionID));
+        
         
     }
+    
+    public void JoinRoom()
+    {
+        
+    }
+
+    
     public bool IsConnected()
     {
         return isConnected;
@@ -365,11 +340,7 @@ public class NetworkedClient : MonoBehaviour
     }
     
 
-void ResetVariables()
-    {
-        NameSet = false;
-        PasswordSet = false;
-    }
+
     //Creating and Logging into account functionality + helper functions
     public void LoginName()
     {
@@ -394,6 +365,12 @@ void ResetVariables()
    
     
     //Getters and setters--------------------------------------------
+    
+    void ResetVariables()
+    {
+        NameSet = false;
+        PasswordSet = false;
+    }
     public string RoomName
     {
         get { return roomName; }
