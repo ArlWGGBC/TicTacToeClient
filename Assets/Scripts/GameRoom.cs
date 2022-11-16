@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 public class GameRoom
@@ -8,8 +9,10 @@ public class GameRoom
     public string gameType;
     public string player1ID;
     public string player2ID;
-    public List<int> spectatorIDs;
+    public List<string> spectatorIDs;
     public List<string> playerIDs;
+
+    public List<BoardTile> TicTacToeBoardTiles;
     
     
 
@@ -22,5 +25,7 @@ public class GameRoom
         
 
         playerIDs = new List<string>();
+        spectatorIDs = new List<string>();
+        TicTacToeBoardTiles = new List<BoardTile>();
     }
 }

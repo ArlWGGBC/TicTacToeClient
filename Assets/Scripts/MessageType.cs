@@ -15,6 +15,10 @@ public class MessageType
    public string Joined = "Joined";
 
    public string Leave = "Leave";
-   
+
+   public string SpectatorJoin = "Spectator";
+
+   public string MakeMove = "Move";
+
    //Deval - EQ24844
 }

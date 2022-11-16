@@ -26,9 +26,13 @@ public class NetworkedClient : MonoBehaviour
     private MessageType _message;
     public StateMachine _currentState;
     
-    [SerializeField]
-    public List<GameRoom> _gameRooms; 
-    public GameRoom _currentRoom;
+    public List<GameRoom> _gameRooms;
+
+
+    public TicTacToeBoard TicTacToeBoard;
+    
+    
+    public string _currentRoom;
    
     
     [SerializeField] public HUD hud;
@@ -58,6 +62,8 @@ public class NetworkedClient : MonoBehaviour
     //roomName local
     protected string roomName;
 
+    public bool isO;
+
 
     public void SetState(StateMachine state)
     {
@@ -73,6 +79,10 @@ public class NetworkedClient : MonoBehaviour
 
         
         _gameRooms = new List<GameRoom>();
+
+        TicTacToeBoard = FindObjectOfType<TicTacToeBoard>();
+        
+        
         _message = new MessageType();
         
         
@@ -178,16 +188,20 @@ public class NetworkedClient : MonoBehaviour
         
         string[] message = msg.Split(',', msg.Length);
 
-        Debug.Log(msg);
-
         _textMeshProUGUI.text = ("Recieved: " + msg);
 
         if (message[0] == _message.Join)
         {
             //Assign values from message for clarity
-            string roomName = message[1];
+            string room_Name = message[1];
+            _currentRoom = room_Name;
             
+            //Send join request to server.
             SendMessageToHost((_message.Join + "," + hud.GetRoomInput() + "," + connectionID));
+            
+            
+            
+            //Tell UI to switch to game room - server already took care of data.
             hud.SwitchGameRoomScreen();
             hud.SetRoomName(roomName);
             
@@ -195,33 +209,52 @@ public class NetworkedClient : MonoBehaviour
         }
         else if (message[0] == _message.Create)
         {
+            //After sending create message to server, server send message back to client.
+            
             //Assign values from message for clarity
             string room_Name = message[1];
+            _currentRoom = room_Name;
             
+            //Tell UI to switch to game room - server already took care of data.
             hud.SwitchGameRoomScreen();
             hud.SetRoomName(room_Name);
-            
-            
+
+            //Instantiate fresh list to push strings inside - use this in PopulateRoomNames function. // UI LOOP
             List<string> playerIDs = new List<string>();
             
             playerIDs.Add(message[2]);
-            
+
+            isO = false;
+            //Pass player IDs to room names.
             hud.PopulateRoomNames(playerIDs);
+            
         }
         else if (message[0] == _message.PlayerCount)
         {
-            //Send connected players count to all clients
-            Debug.Log("UPDATING PLAYERS :" + " " + Convert.ToInt32(message[1]));
             hud.UpdatePlayersOnlineCount(Convert.ToInt32(message[1]));
         }
         else if (message[0] == _message.Joined)
         {
+            //Instantiate fresh list to push strings inside - use this in PopulateRoomNames function. // UI LOOP
             List<string> playerIDs = new List<string>();
             
-            playerIDs.Add(message[2]);
-            playerIDs.Add(message[3]);
+            //Grab player IDS passed from server(info from gameroom) and pass into list to give to UI function.
+                    playerIDs.Add(message[2]);
+                    playerIDs.Add(message[3]);
+
+                    isO = true;
+                    //Pass player IDs to room names.
+                    hud.PopulateRoomNames(playerIDs);
+        }
+        else if (message[0] == _message.Leave)
+        {
+            Debug.Log(message[2] + " Player : Left the game");
+            //Remove room name that was passed in.
+            hud.RemoveRoomName(message[2]);
+        }
+        else if (message[0] == _message.MakeMove)
+        {
             
-            hud.PopulateRoomNames(playerIDs);
         }
       
 
@@ -236,17 +269,12 @@ public class NetworkedClient : MonoBehaviour
     }
     public void CreateRoom()
     {
-
+        _currentRoom = hud.GetRoomInput();
         SendMessageToHost((_message.Create + "," + hud.GetRoomInput() + "," + connectionID));
         
-        
+
     }
     
-    public void JoinRoom()
-    {
-        
-    }
-
     
     public bool IsConnected()
     {

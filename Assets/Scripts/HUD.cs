@@ -55,7 +55,6 @@ public class HUD : MonoBehaviour
 
     public void PopulateRoomNames(List<string> id)
     {
-        Debug.Log(id.Count);
         if (id.Count <= 0)
             return;
         else
@@ -81,6 +80,24 @@ public class HUD : MonoBehaviour
         }
         
     }
+    
+    
+    public void RemoveRoomName(string id)
+    {
+        foreach (var player in playersList)
+        {
+
+            if (player.slotName.text == id)
+            {
+                player.SetName("");
+                player.isFilled = false;
+            }
+            
+        }
+        
+    }
+    
+    
     public void SetUIText(string text)
     {
         displayText.text = text;
@@ -153,6 +170,7 @@ public class HUD : MonoBehaviour
         startPanel.SetActive(false);
         createAccountPanel.SetActive(false);
         loginPanel.SetActive(false);
+        gameRoomPanel.SetActive(false);
         loggedInPanel.SetActive(true);
     }
 
