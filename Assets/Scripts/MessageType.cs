@@ -13,6 +13,8 @@ public class MessageType
    public string PlayerCount = "PlayerCount";
    
    public string Joined = "Joined";
+
+   public string Leave = "Leave";
    
    //Deval - EQ24844
 }

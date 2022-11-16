@@ -5,8 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using TMPro;
-using Unity.VisualScripting;
-using UnityEditor.VersionControl;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.Networking.Match;
@@ -146,7 +144,7 @@ public class NetworkedClient : MonoBehaviour
             hostID = NetworkTransport.AddHost(topology, 0);
             Debug.Log("Socket open.  Host ID = " + hostID);
 
-            connectionID = NetworkTransport.Connect(hostID, "192.168.2.11", socketPort, 0, out error); // server is local on network
+            connectionID = NetworkTransport.Connect(hostID, "10.0.228.142", socketPort, 0, out error); // server is local on network
 
             if (error == 0)
             {
@@ -159,6 +157,7 @@ public class NetworkedClient : MonoBehaviour
     public void Disconnect()
     {
         NetworkTransport.Disconnect(hostID, connectionID, out error);
+        LeaveGame();
     }
     
     public void SendMessageToHost(string msg)
@@ -188,16 +187,26 @@ public class NetworkedClient : MonoBehaviour
             //Assign values from message for clarity
             string roomName = message[1];
             
+            SendMessageToHost((_message.Join + "," + hud.GetRoomInput() + "," + connectionID));
+            hud.SwitchGameRoomScreen();
+            hud.SetRoomName(roomName);
+            
            
         }
         else if (message[0] == _message.Create)
         {
             //Assign values from message for clarity
-            string roomName = message[1];
+            string room_Name = message[1];
             
             hud.SwitchGameRoomScreen();
-            hud.SetRoomName(roomName);
+            hud.SetRoomName(room_Name);
             
+            
+            List<string> playerIDs = new List<string>();
+            
+            playerIDs.Add(message[2]);
+            
+            hud.PopulateRoomNames(playerIDs);
         }
         else if (message[0] == _message.PlayerCount)
         {
@@ -207,16 +216,27 @@ public class NetworkedClient : MonoBehaviour
         }
         else if (message[0] == _message.Joined)
         {
+            List<string> playerIDs = new List<string>();
             
+            playerIDs.Add(message[2]);
+            playerIDs.Add(message[3]);
+            
+            hud.PopulateRoomNames(playerIDs);
         }
       
 
 
     }
 
-    
+
+    public void LeaveGame()
+    {
+        hud.OnLoggedInScreen();
+        SendMessageToHost(_message.Leave + "," + _currentRoom + "," + connectionID);
+    }
     public void CreateRoom()
     {
+
         SendMessageToHost((_message.Create + "," + hud.GetRoomInput() + "," + connectionID));
         
         

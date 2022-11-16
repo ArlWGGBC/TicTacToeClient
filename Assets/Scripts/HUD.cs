@@ -162,6 +162,12 @@ public class HUD : MonoBehaviour
         playersOnline.text = ("Players Online : " + player);
     }
 
+    public void UpdatePlayerListCount(int player1ID, int player2ID)
+    {
+        
+    }
+    
+
     public void UserAlreadyExists()
     {
         
