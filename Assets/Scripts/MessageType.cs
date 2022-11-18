@@ -20,5 +20,7 @@ public class MessageType
 
    public string MakeMove = "Move";
 
+   public string Message = "Message";
+
    //Deval - EQ24844
 }

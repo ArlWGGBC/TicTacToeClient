@@ -19,10 +19,18 @@ public class HUD : MonoBehaviour
     [SerializeField] private TextMeshProUGUI playersOnline;
 
     [SerializeField] public Transform playerListParent;
-    [SerializeField] public PlayerSlot[] playersList;
+    
+    [SerializeField] public Transform textboxListParent;
+    
+    [SerializeField] public Slot[] PlayerNameSlots;
 
+    
+    [SerializeField] public Slot[] MessageSlots;
+    
     [SerializeField] private TextMeshProUGUI roomName;
 
+    [SerializeField] private TMP_InputField _textbox;
+    
     [SerializeField] private TMP_InputField roomInputField;
     
     [SerializeField] private TMP_InputField nameInputField;
@@ -42,7 +50,12 @@ public class HUD : MonoBehaviour
     [SerializeField] private GameObject loggedInPanel;
     
     [SerializeField] private GameObject gameRoomPanel;
+    
 
+
+    public List<Slot> textBox;
+    public List<Slot> playerNameBox;
+    public List<Slot> miscBox;
 
     public List<string> roomnames;
     
@@ -50,7 +63,18 @@ public class HUD : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        playersList = playerListParent.GetComponentsInChildren<PlayerSlot>();
+        PlayerNameSlots = playerListParent.GetComponentsInChildren<Slot>();
+        MessageSlots = textboxListParent.GetComponentsInChildren<Slot>();
+
+        foreach (var Slot in PlayerNameSlots)
+        {
+            playerNameBox.Add(Slot);
+        }
+
+        foreach (var messageSlot in MessageSlots)
+        {
+            textBox.Add(messageSlot);
+        }
     }
 
     public void PopulateRoomNames(List<string> id)
@@ -59,7 +83,7 @@ public class HUD : MonoBehaviour
             return;
         else
         {
-            foreach (var player in playersList)
+            foreach (var player in playerNameBox)
             {
                 player.SetName("");
                 player.isFilled = false;
@@ -68,11 +92,11 @@ public class HUD : MonoBehaviour
 
         foreach (var player in id)
         {
-            foreach (var slot in playersList)
+            foreach (var slot in playerNameBox)
             {
                 if (!slot.isFilled)
                 {
-                    slot.SetName(player);
+                    slot.SetName("Player : " + player);
                     slot.isFilled = true;
                     break;
                 }
@@ -80,11 +104,66 @@ public class HUD : MonoBehaviour
         }
         
     }
+
+    public bool CheckMessage()
+    {
+
+        if (_textbox.text.Contains("poo"))
+        {
+            SendErrorMessage();
+            return false;
+        }
+        
+        return true;
+    }
+
+    private void SendErrorMessage()
+    {
+        foreach (var slot in textBox)
+        {
+            if (!slot.isFilled)
+            {
+                slot.SetName("You cant say : " + _textbox.text);
+                slot.isFilled = true;
+                break;
+            }
+        }
+        
+        foreach (var player in textBox)
+        {
+            player.SetName("");
+            player.isFilled = false;
+        }
+    }
+
+    public void AddChatMessage(string text)
+    {
+        Debug.Log("HERE : " + text);
+        foreach (var slot in textBox)
+        {
+                if (!slot.isFilled)
+                {
+                    Debug.Log("Adding to slot :" + slot);
+                    slot.SetName(text);
+                    slot.isFilled = true;
+                    return;
+                }
+        }
+
+
+        foreach (var slot in textBox)
+        {
+            slot.SetName("");
+            slot.isFilled = false;
+        }
+        
+        
+    }
     
     
     public void RemoveRoomName(string id)
     {
-        foreach (var player in playersList)
+        foreach (var player in PlayerNameSlots)
         {
 
             if (player.slotName.text == id)
@@ -99,7 +178,7 @@ public class HUD : MonoBehaviour
     
     public void ResetRoomHUD()
     {
-        foreach (var player in playersList)
+        foreach (var player in PlayerNameSlots)
         {
             player.SetName("");
             player.isFilled = false;
@@ -133,6 +212,11 @@ public class HUD : MonoBehaviour
     public string GetRoomInput()
     {
         return roomInputField.text;
+    }
+
+    public string GetTextBoxInput()
+    {
+        return _textbox.text;
     }
 
     public string GetPasswordInput()

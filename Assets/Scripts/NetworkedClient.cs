@@ -23,7 +23,7 @@ public class NetworkedClient : MonoBehaviour
     bool isConnected = false;
     int ourClientID;
 
-    private MessageType _message;
+    public MessageType _message;
     public StateMachine _currentState;
 
     public TicTacToeBoard TicTacToeBoard;
@@ -33,10 +33,6 @@ public class NetworkedClient : MonoBehaviour
    
     
     [SerializeField] public HUD hud;
-    [SerializeField] private TextMeshProUGUI _textMeshProUGUI;
-    
-    
-    
     
     //Current account credentials local
     protected string accountName;
@@ -181,8 +177,7 @@ public class NetworkedClient : MonoBehaviour
         // message[0] == Signifier, message[1] == Room Name, message[2] == Room owner ID(player1)
         
         string[] message = msg.Split(',', msg.Length);
-
-        _textMeshProUGUI.text = ("Recieved: " + msg);
+        
 
         if (message[0] == _message.Join)
         {
@@ -250,6 +245,7 @@ public class NetworkedClient : MonoBehaviour
         else if (message[0] == _message.Leave)
         {
             Debug.Log(message[2] + " Player : Left the game");
+            _currentRoom = "";
             //Remove room name that was passed in.
             hud.RemoveRoomName(message[2]);
         }
@@ -257,12 +253,24 @@ public class NetworkedClient : MonoBehaviour
         {
             
         }
+        else if (message[0] == _message.Message)
+        {
+            Debug.Log(msg);
+            Debug.Log("adding chat message :" + message[2]);
+
+            var player = ("Player " + message[2] + " : ");
+            
+            hud.AddChatMessage((player + message[1]));
+        }
       
 
 
     }
 
-
+    public void RecieveMessage()
+    {
+        
+    }
     public void LeaveGame()
     {
         hud.OnLoggedInScreen();
