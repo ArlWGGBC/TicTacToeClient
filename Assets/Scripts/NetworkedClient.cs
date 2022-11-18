@@ -25,9 +25,6 @@ public class NetworkedClient : MonoBehaviour
 
     private MessageType _message;
     public StateMachine _currentState;
-    
-    public List<GameRoom> _gameRooms;
-
 
     public TicTacToeBoard TicTacToeBoard;
     
@@ -76,9 +73,6 @@ public class NetworkedClient : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-
-        
-        _gameRooms = new List<GameRoom>();
 
         TicTacToeBoard = FindObjectOfType<TicTacToeBoard>();
         
@@ -154,7 +148,7 @@ public class NetworkedClient : MonoBehaviour
             hostID = NetworkTransport.AddHost(topology, 0);
             Debug.Log("Socket open.  Host ID = " + hostID);
 
-            connectionID = NetworkTransport.Connect(hostID, "10.0.228.142", socketPort, 0, out error); // server is local on network
+            connectionID = NetworkTransport.Connect(hostID, "192.168.2.16", socketPort, 0, out error); // server is local on network
 
             if (error == 0)
             {
@@ -199,7 +193,7 @@ public class NetworkedClient : MonoBehaviour
             //Send join request to server.
             SendMessageToHost((_message.Join + "," + hud.GetRoomInput() + "," + connectionID));
             
-            
+                
             
             //Tell UI to switch to game room - server already took care of data.
             hud.SwitchGameRoomScreen();
@@ -228,6 +222,8 @@ public class NetworkedClient : MonoBehaviour
             //Pass player IDs to room names.
             hud.PopulateRoomNames(playerIDs);
             
+            playerIDs.Clear();
+
         }
         else if (message[0] == _message.PlayerCount)
         {
@@ -235,16 +231,21 @@ public class NetworkedClient : MonoBehaviour
         }
         else if (message[0] == _message.Joined)
         {
+            
+            Debug.Log("Joined : " + message[1] + " : " + message[2]);
+            
+            
             //Instantiate fresh list to push strings inside - use this in PopulateRoomNames function. // UI LOOP
             List<string> playerIDs = new List<string>();
             
             //Grab player IDS passed from server(info from gameroom) and pass into list to give to UI function.
                     playerIDs.Add(message[2]);
                     playerIDs.Add(message[3]);
-
-                    isO = true;
+                    
                     //Pass player IDs to room names.
                     hud.PopulateRoomNames(playerIDs);
+                    
+                    playerIDs.Clear();
         }
         else if (message[0] == _message.Leave)
         {
@@ -266,6 +267,8 @@ public class NetworkedClient : MonoBehaviour
     {
         hud.OnLoggedInScreen();
         SendMessageToHost(_message.Leave + "," + _currentRoom + "," + connectionID);
+        
+        hud.ResetRoomHUD();
     }
     public void CreateRoom()
     {
@@ -321,8 +324,6 @@ public class NetworkedClient : MonoBehaviour
         }
             
         
-        
-       
         StreamWriter sw = new StreamWriter(filePath);
         sw.WriteLine("name" + "," + accountName);
         sw.WriteLine("password" + "," + accountPassword);
@@ -379,12 +380,14 @@ public class NetworkedClient : MonoBehaviour
                 SetState(new LoggedInState(this));
                 break;
             }
+            
+            sr.Close();
         }
         
         
         hud.SetUITextLogin("Incorrect Credentials");
 
-
+        
     }
     
 

@@ -97,6 +97,18 @@ public class HUD : MonoBehaviour
         
     }
     
+    public void ResetRoomHUD()
+    {
+        foreach (var player in playersList)
+        {
+            player.SetName("");
+            player.isFilled = false;
+        }
+
+        roomName.text = "";
+
+    }
+    
     
     public void SetUIText(string text)
     {
