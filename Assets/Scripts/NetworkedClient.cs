@@ -26,8 +26,12 @@ public class NetworkedClient : MonoBehaviour
     public MessageType _message;
     public StateMachine _currentState;
 
-    public TicTacToeBoard TicTacToeBoard;
-    
+
+    public Transform BoardParent;
+    public BoardTile[] TTT_Tiles;
+
+
+    public identifier identity;
     
     public string _currentRoom;
    
@@ -70,9 +74,8 @@ public class NetworkedClient : MonoBehaviour
     void Start()
     {
 
-        TicTacToeBoard = FindObjectOfType<TicTacToeBoard>();
-        
-        
+
+        TTT_Tiles = BoardParent.GetComponentsInChildren<BoardTile>();
         _message = new MessageType();
         
         
@@ -144,7 +147,7 @@ public class NetworkedClient : MonoBehaviour
             hostID = NetworkTransport.AddHost(topology, 0);
             Debug.Log("Socket open.  Host ID = " + hostID);
 
-            connectionID = NetworkTransport.Connect(hostID, "192.168.2.16", socketPort, 0, out error); // server is local on network
+            connectionID = NetworkTransport.Connect(hostID, "192.168.2.11", socketPort, 0, out error); // server is local on network
 
             if (error == 0)
             {
@@ -251,7 +254,16 @@ public class NetworkedClient : MonoBehaviour
         }
         else if (message[0] == _message.MakeMove)
         {
-            
+            Debug.Log("MAKING MOVE!");
+            foreach (var tile in TTT_Tiles)
+            {
+                Debug.Log(Convert.ToInt32(message[1]) + " : COMPARED TO : " + tile.boardPosition);
+                if (Convert.ToInt32(message[1]) == tile.boardPosition)
+                {
+                    Debug.Log(message[1]);
+                    tile.SetTile(message[2]);
+                }
+            }
         }
         else if (message[0] == _message.Message)
         {
@@ -262,6 +274,22 @@ public class NetworkedClient : MonoBehaviour
             
             hud.AddChatMessage((player + message[1]));
         }
+        else if (message[0] == _message.GameStart)
+        {
+            if (message[1] == identifier.O.ToString())
+            {
+                identity = identifier.O;
+            }
+            else
+            {
+                identity = identifier.X;
+            }
+    
+            SendMessageToHost(_message.GameStart + "," + _currentRoom);
+    
+        }
+
+        
       
 
 

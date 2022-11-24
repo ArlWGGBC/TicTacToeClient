@@ -38,12 +38,12 @@ public class BoardTile : MonoBehaviour
 
     public void MakeMove()
     {
-        SetTile(client.isO);
+        
     }
     
-    private void SetTile(bool isO)
+    public void SetTile(string identifier)
     {
-        if (isO)
+        if (identifier == global::identifier.O.ToString())
             _image.sprite = o;
         else
         { 
