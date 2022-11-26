@@ -24,5 +24,7 @@ public class MessageType
 
    public string GameStart = "GameStart";
 
+   public string GameWon = "Won";
+
    //Deval - EQ24844
 }

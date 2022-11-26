@@ -182,8 +182,23 @@ public class HUD : MonoBehaviour
             player.isFilled = false;
         }
 
+        foreach (var tiles in _client.TTT_Tiles)
+        {
+            tiles.SetTile(identifier.N.ToString());
+            tiles.isBlank = true;
+        }
+
         roomName.text = "";
 
+    }
+
+    public void ResetTicTacBoard()
+    {
+        foreach (var tiles in _client.TTT_Tiles)
+        {
+            tiles.SetTile(identifier.N.ToString());
+            tiles.isBlank = true;
+        }
     }
     
     

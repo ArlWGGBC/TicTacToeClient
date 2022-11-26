@@ -222,8 +222,7 @@ public class NetworkedClient : MonoBehaviour
             List<string> playerIDs = new List<string>();
             
             playerIDs.Add(message[2]);
-
-            isO = false;
+            
             //Pass player IDs to room names.
             hud.PopulateRoomNames(playerIDs);
             
@@ -258,6 +257,7 @@ public class NetworkedClient : MonoBehaviour
             Debug.Log(message[2] + " Player : Left the game");
             _currentRoom = "";
             //Remove room name that was passed in.
+            hud.ResetRoomHUD();
             hud.RemoveRoomName(message[2]);
         }
         else if (message[0] == _message.MakeMove)
@@ -269,7 +269,7 @@ public class NetworkedClient : MonoBehaviour
                 Debug.Log("Comparing : " + message[1] + " : " + tile.boardPosition);
                 if (Convert.ToInt32(message[1]) == tile.boardPosition)
                 {
-                    Debug.Log("Setting Tile : " + message[1]);
+                    Debug.Log("Setting Tile : " + message[1] + " to : " + message[2]);
                     tile.SetTile(message[2]);
                     break;
                 }
@@ -299,6 +299,10 @@ public class NetworkedClient : MonoBehaviour
     
             SendMessageToHost(_message.GameStart + "," + _currentRoom);
     
+        }
+        else if (message[0] == _message.GameWon)
+        {
+            hud.ResetRoomHUD();
         }
 
     }

@@ -39,7 +39,6 @@ public class BoardTile : MonoBehaviour
 
     public void MakeMove()
     {
-        Debug.Log("CLIENT IDENTITY : " + client.identity);
         client.SendMessageToHost(client._message.MakeMove + "," + client._currentRoom + "," + client.identity + "," + boardPosition);
     }
     
@@ -50,10 +49,15 @@ public class BoardTile : MonoBehaviour
             _image.sprite = o;
             _positionID = global::identifier.O;
         }
-        else
+        else if(identifier == "X")
         { 
             _image.sprite = x;
             _positionID = global::identifier.X;
+        }
+        else
+        {
+            _image.sprite = null;
+            _positionID = global::identifier.N;
         }
     }
 }
