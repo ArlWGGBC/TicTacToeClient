@@ -20,28 +20,11 @@ public class TicTacToeBoard : MonoBehaviour
    public BoardTile[] slotList;
 
    private int id;
-   
-   private void Start()
-   {
-      slotList = slotParent.GetComponentsInChildren<BoardTile>();
-     
-
-      
-   }
 
 
-   public void ResetBoard()
-   {
-      foreach (var slot in slotList)
-      {
-         slot._image = null;
-         slot._positionID = identifier.BLANK;
-         slot.isBlank = true;
-      }
-   }
-
-   
 
 
-   
+
+
+
 }

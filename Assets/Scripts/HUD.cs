@@ -138,12 +138,10 @@ public class HUD : MonoBehaviour
 
     public void AddChatMessage(string text)
     {
-        Debug.Log("HERE : " + text);
         foreach (var slot in textBox)
         {
                 if (!slot.isFilled)
                 {
-                    Debug.Log("Adding to slot :" + slot);
                     slot.SetName(text);
                     slot.isFilled = true;
                     return;

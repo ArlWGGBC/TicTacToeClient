@@ -76,6 +76,13 @@ public class NetworkedClient : MonoBehaviour
 
 
         TTT_Tiles = BoardParent.GetComponentsInChildren<BoardTile>();
+
+        for (int i = 0; i < TTT_Tiles.Length; i++)
+        {
+            TTT_Tiles[i].boardPosition = i + 1;
+        }
+        
+        
         _message = new MessageType();
         
         
@@ -147,7 +154,7 @@ public class NetworkedClient : MonoBehaviour
             hostID = NetworkTransport.AddHost(topology, 0);
             Debug.Log("Socket open.  Host ID = " + hostID);
 
-            connectionID = NetworkTransport.Connect(hostID, "192.168.2.11", socketPort, 0, out error); // server is local on network
+            connectionID = NetworkTransport.Connect(hostID, "192.168.2.73", socketPort, 0, out error); // server is local on network
 
             if (error == 0)
             {
@@ -242,7 +249,8 @@ public class NetworkedClient : MonoBehaviour
                     
                     //Pass player IDs to room names.
                     hud.PopulateRoomNames(playerIDs);
-                    
+                    //hud.PopulateGameBoard(message[4],message[5], message[6],message[7],message[8],message[9],message[10],message[11],message[12])
+                   
                     playerIDs.Clear();
         }
         else if (message[0] == _message.Leave)
@@ -254,21 +262,21 @@ public class NetworkedClient : MonoBehaviour
         }
         else if (message[0] == _message.MakeMove)
         {
-            Debug.Log("MAKING MOVE!");
+            //makemove[0] , boardposition[1] , identity[2]
+            
             foreach (var tile in TTT_Tiles)
             {
-                Debug.Log(Convert.ToInt32(message[1]) + " : COMPARED TO : " + tile.boardPosition);
+                Debug.Log("Comparing : " + message[1] + " : " + tile.boardPosition);
                 if (Convert.ToInt32(message[1]) == tile.boardPosition)
                 {
-                    Debug.Log(message[1]);
+                    Debug.Log("Setting Tile : " + message[1]);
                     tile.SetTile(message[2]);
+                    break;
                 }
             }
         }
         else if (message[0] == _message.Message)
         {
-            Debug.Log(msg);
-            Debug.Log("adding chat message :" + message[2]);
 
             var player = ("Player " + message[2] + " : ");
             
@@ -280,21 +288,26 @@ public class NetworkedClient : MonoBehaviour
             {
                 identity = identifier.O;
             }
-            else
+            else if(message[1] == identifier.X.ToString())
             {
                 identity = identifier.X;
+            }
+            else
+            {
+                identity = identifier.N;
             }
     
             SendMessageToHost(_message.GameStart + "," + _currentRoom);
     
         }
 
-        
-      
-
-
     }
 
+
+    public void MakeMove(int position)
+    {
+        
+    }
     public void RecieveMessage()
     {
         

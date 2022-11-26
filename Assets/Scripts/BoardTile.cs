@@ -30,24 +30,30 @@ public class BoardTile : MonoBehaviour
     {
         _image = GetComponent<Image>();
         isBlank = true;
-        _positionID = identifier.BLANK;
+        _positionID = identifier.N;
        
 
+       
         client = FindObjectOfType<NetworkedClient>();
     }
 
     public void MakeMove()
     {
-        
+        Debug.Log("CLIENT IDENTITY : " + client.identity);
+        client.SendMessageToHost(client._message.MakeMove + "," + client._currentRoom + "," + client.identity + "," + boardPosition);
     }
     
     public void SetTile(string identifier)
     {
-        if (identifier == global::identifier.O.ToString())
+        if (identifier == "O")
+        {
             _image.sprite = o;
+            _positionID = global::identifier.O;
+        }
         else
         { 
             _image.sprite = x;
+            _positionID = global::identifier.X;
         }
     }
 }
@@ -56,5 +62,5 @@ public enum identifier
 {
     X,
     O,
-    BLANK
+    N
 }
