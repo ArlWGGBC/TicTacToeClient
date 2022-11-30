@@ -178,38 +178,41 @@ public class HUD : MonoBehaviour
         replayDropdown.SetupDropdown();
         
         replayDropdown.onValueChanged.AddListener(PopulateReplay);
-        
-        replayDropdown.Animate();
-        
+
     }
 
     private void PopulateReplay(int value)
     {
+        StopAllCoroutines();
+        ResetReplayBoard();
+        
        string replayName =  replayDropdown.items[value].itemName;
-       Debug.Log(replayName);
-
 
        foreach (var replay in _client.replays)
        {
            if (replayName != replay.roomname) continue;
-           
-           foreach (var move in replay.moves)
-           {
-               foreach (var tile in _client.Replay_TTT_Tiles)
-               {
-                   if (Convert.ToInt32(move.pos) == tile.boardPosition)
-                   {
-                       tile.SetTile(move.identifier);
-                   }
-               }
-           }
+
+           StartCoroutine(ReplayMove(replay));
        }
        
     }
     
-
-
-
+    
+    IEnumerator ReplayMove(Replay replay)
+    {
+        foreach (var move in replay.moves)
+        {
+            yield return new WaitForSeconds(1f);
+            
+            foreach (var tile in _client.Replay_TTT_Tiles)
+            {
+                if (Convert.ToInt32(move.pos) == tile.boardPosition)
+                {
+                    tile.SetTile(move.identifier);
+                }
+            }
+        }
+    }
     public void RemoveRoomName(string id)
     {
         foreach (var player in PlayerNameSlots)
@@ -246,6 +249,15 @@ public class HUD : MonoBehaviour
     public void ResetTicTacBoard()
     {
         foreach (var tiles in _client.TTT_Tiles)
+        {
+            tiles.SetTile(identifier.N.ToString());
+            tiles.isBlank = true;
+        }
+    }
+    
+    public void ResetReplayBoard()
+    {
+        foreach (var tiles in _client.Replay_TTT_Tiles)
         {
             tiles.SetTile(identifier.N.ToString());
             tiles.isBlank = true;
