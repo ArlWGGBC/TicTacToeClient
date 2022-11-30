@@ -26,7 +26,7 @@ public class Messages
 
    public string GameWon = "Won";
 
-   public string GetReplays = "Replays";
+   public static string GetReplays = "Replays";
 
    
 }

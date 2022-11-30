@@ -3,11 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.Networking.Match;
+using UnityEngine.TestTools;
 using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
@@ -34,9 +36,11 @@ public class NetworkedClient : MonoBehaviour
     public Transform Replay_BoardParent;
     public BoardTile[] Replay_TTT_Tiles;
 
+
+
+    public List<Replay> replays;
     
     
-    private List<Move>
     public identifier identity;
 
     public string _currentRoom;
@@ -48,7 +52,9 @@ public class NetworkedClient : MonoBehaviour
     protected string accountName;
 
     protected string accountPassword;
-
+    
+    
+    string currentReplay = "";
     //Is connection id
     protected int accountID;
 
@@ -81,6 +87,8 @@ public class NetworkedClient : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        
+      
         Debug.Log(Application.persistentDataPath);
 
         TTT_Tiles = BoardParent.GetComponentsInChildren<BoardTile>();
@@ -95,11 +103,15 @@ public class NetworkedClient : MonoBehaviour
 
 
         Messages = new Messages();
-
+        
+        //Get replays.
+        
 
         Connect();
         SetState(new CreateAccountState(this));
 
+        replays = new List<Replay>();
+        
     }
 
     // Update is called once per frame
@@ -322,10 +334,28 @@ public class NetworkedClient : MonoBehaviour
         {
             //RECEIVED INFO
             //_message.GetReplays + ","  + roomName + "," + winner + "," + move.pos + "," + move.identifier, id
+           
+
+            Debug.Log("REPLAY MOVE : " + message[0] + ", " + message[1] + "," + message[3] + "," + message[4]);
+
+            if (message[1] != currentReplay)
+            {
+                Debug.Log(message[1] + "COmpared to :" + currentReplay);
+                currentReplay = message[1];
+                replays.Add(new Replay(message[2], message[1]));
+                hud.AddReplay(message[1]);
+            }
             
-            
-            
-            
+            if (replays.Count > 0)
+            {
+                foreach (var replay in replays)
+                {
+                    if (replay.roomname == currentReplay)
+                    {
+                        replay.moves.Add(new Move(message[3], message[4]));
+                    }
+                }
+            }
         }
 
     }
@@ -602,15 +632,14 @@ public struct Move
 public struct Replay
 {
     public List<Move> moves;
-    public Replay(string position, string id)
+    public Replay(string winner, string roomname)
     {
         moves = new List<Move>();
-        
-        pos = position;
-        identifier = id;
+        this.roomname = roomname;
+        this.winner = winner;
     }
-    
-    
-    public string pos;
-    public string identifier;
+
+
+    public string roomname;
+    public string winner;
 }

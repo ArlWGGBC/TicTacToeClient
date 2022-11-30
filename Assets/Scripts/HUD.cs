@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Michsky.MUIP;
 using TMPro;
 using TMPro.Examples;
 using UnityEngine;
@@ -10,6 +11,8 @@ using static TMPro.TextMeshPro;
 
 public class HUD : MonoBehaviour
 {
+
+    #region References
     [SerializeField] private NetworkedClient _client;
     
     [SerializeField] private TextMeshProUGUI displayText;
@@ -50,6 +53,15 @@ public class HUD : MonoBehaviour
     [SerializeField] private GameObject loggedInPanel;
     
     [SerializeField] private GameObject gameRoomPanel;
+
+    [SerializeField] private GameObject replayPanel;
+    
+    [SerializeField] private CustomDropdown replayDropdown;
+
+    [SerializeField] private Sprite icon;
+
+    #endregion
+    
     
 
 
@@ -157,8 +169,47 @@ public class HUD : MonoBehaviour
         
         
     }
+
+
+    public void AddReplay(string title)
+    {
+        replayDropdown.CreateNewItem(title, icon, true);
+        
+        replayDropdown.SetupDropdown();
+        
+        replayDropdown.onValueChanged.AddListener(PopulateReplay);
+        
+        replayDropdown.Animate();
+        
+    }
+
+    private void PopulateReplay(int value)
+    {
+       string replayName =  replayDropdown.items[value].itemName;
+       Debug.Log(replayName);
+
+
+       foreach (var replay in _client.replays)
+       {
+           if (replayName != replay.roomname) continue;
+           
+           foreach (var move in replay.moves)
+           {
+               foreach (var tile in _client.Replay_TTT_Tiles)
+               {
+                   if (Convert.ToInt32(move.pos) == tile.boardPosition)
+                   {
+                       tile.SetTile(move.identifier);
+                   }
+               }
+           }
+       }
+       
+    }
     
-    
+
+
+
     public void RemoveRoomName(string id)
     {
         foreach (var player in PlayerNameSlots)
@@ -272,6 +323,16 @@ public class HUD : MonoBehaviour
         
         
 
+    }
+
+    public void SwitchReplayScreen()
+    {
+        startPanel.SetActive(false);
+        createAccountPanel.SetActive(false);
+        loginPanel.SetActive(false);
+        loggedInPanel.SetActive(false);
+        replayPanel.SetActive(true);
+        _client.SendMessageToHost(Messages.GetReplays);
     }
 
     public void OnLoggedInScreen()
