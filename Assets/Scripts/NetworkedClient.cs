@@ -23,7 +23,7 @@ public class NetworkedClient : MonoBehaviour
     bool isConnected = false;
     int ourClientID;
 
-    public MessageType _message;
+    public Messages Messages;
     public StateMachine _currentState;
 
 
@@ -31,19 +31,27 @@ public class NetworkedClient : MonoBehaviour
     public BoardTile[] TTT_Tiles;
 
 
+    public Transform Replay_BoardParent;
+    public BoardTile[] Replay_TTT_Tiles;
+
+    
+    
+    private List<Move>
     public identifier identity;
-    
+
     public string _currentRoom;
-   
-    
+
+
     [SerializeField] public HUD hud;
-    
+
     //Current account credentials local
     protected string accountName;
+
     protected string accountPassword;
+
     //Is connection id
     protected int accountID;
-    
+
     //Used for input on login screen
     protected string LoginInputName;
     protected string LoginInputPassword;
@@ -51,11 +59,11 @@ public class NetworkedClient : MonoBehaviour
     //booleans for account creation screen
     protected bool AccountNameSet = false;
     protected bool AccountPasswordSet = false;
-    
+
     //connected to account creation booleans
     protected bool CanCreate = true;
 
-    
+
     //roomName local
     protected string roomName;
 
@@ -64,37 +72,40 @@ public class NetworkedClient : MonoBehaviour
 
     public void SetState(StateMachine state)
     {
-        
+
         _currentState = state;
         _currentState.Start();
     }
 
-    
+
     // Start is called before the first frame update
     void Start()
     {
-
+        Debug.Log(Application.persistentDataPath);
 
         TTT_Tiles = BoardParent.GetComponentsInChildren<BoardTile>();
+        Replay_TTT_Tiles = Replay_BoardParent.GetComponentsInChildren<BoardTile>();
+
 
         for (int i = 0; i < TTT_Tiles.Length; i++)
         {
             TTT_Tiles[i].boardPosition = i + 1;
+            Replay_TTT_Tiles[i].boardPosition = i + 1;
         }
-        
-        
-        _message = new MessageType();
-        
-        
+
+
+        Messages = new Messages();
+
+
         Connect();
         SetState(new CreateAccountState(this));
-        
+
     }
 
     // Update is called once per frame
     void Update()
     {
-        if(Input.GetKeyDown(KeyCode.S))
+        if (Input.GetKeyDown(KeyCode.S))
             SendMessageToHost("Hello from client" + accountName);
 
         UpdateNetworkConnection();
@@ -110,7 +121,8 @@ public class NetworkedClient : MonoBehaviour
             byte[] recBuffer = new byte[1024];
             int bufferSize = 1024;
             int dataSize;
-            NetworkEventType recNetworkEvent = NetworkTransport.Receive(out recHostID, out recConnectionID, out recChannelID, recBuffer, bufferSize, out dataSize, out error);
+            NetworkEventType recNetworkEvent = NetworkTransport.Receive(out recHostID, out recConnectionID,
+                out recChannelID, recBuffer, bufferSize, out dataSize, out error);
 
             switch (recNetworkEvent)
             {
@@ -118,7 +130,7 @@ public class NetworkedClient : MonoBehaviour
                     Debug.Log("connected.  " + recConnectionID);
                     ourClientID = recConnectionID;
                     //=SendDataToHost();
-                        
+
                     break;
                 case NetworkEventType.DataEvent:
                     string msg = Encoding.Unicode.GetString(recBuffer, 0, dataSize);
@@ -131,13 +143,13 @@ public class NetworkedClient : MonoBehaviour
                     break;
                 case NetworkEventType.BroadcastEvent:
                     break;
-                
-                default :
+
+                default:
                     break;
             }
         }
     }
-    
+
     private void Connect()
     {
 
@@ -154,7 +166,9 @@ public class NetworkedClient : MonoBehaviour
             hostID = NetworkTransport.AddHost(topology, 0);
             Debug.Log("Socket open.  Host ID = " + hostID);
 
-            connectionID = NetworkTransport.Connect(hostID, "192.168.2.73", socketPort, 0, out error); // server is local on network
+            connectionID =
+                NetworkTransport.Connect(hostID, "192.168.2.11", socketPort, 0,
+                    out error); // server is local on network
 
             if (error == 0)
             {
@@ -163,96 +177,96 @@ public class NetworkedClient : MonoBehaviour
             }
         }
     }
-    
+
     public void Disconnect()
     {
         NetworkTransport.Disconnect(hostID, connectionID, out error);
         LeaveGame();
     }
-    
+
     public void SendMessageToHost(string msg)
     {
         byte[] buffer = Encoding.Unicode.GetBytes(msg);
         NetworkTransport.Send(hostID, connectionID, reliableChannelID, buffer, msg.Length * sizeof(char), out error);
     }
-    
+
     public void SendDataToHost(char[] msg)
     {
         byte[] buffer = Encoding.Unicode.GetBytes(msg);
-        NetworkTransport.Send(hostID, connectionID, reliableChannelID, buffer, msg.Length * sizeof(char),  out error);
+        NetworkTransport.Send(hostID, connectionID, reliableChannelID, buffer, msg.Length * sizeof(char), out error);
     }
 
     private void ProcessRecievedMsg(string msg, int id)
     {
         // message[0] == Signifier, message[1] == Room Name, message[2] == Room owner ID(player1)
-        
-        string[] message = msg.Split(',', msg.Length);
-        
 
-        if (message[0] == _message.Join)
+        string[] message = msg.Split(',', msg.Length);
+
+
+        if (message[0] == Messages.Join)
         {
             //Assign values from message for clarity
             string room_Name = message[1];
             _currentRoom = room_Name;
-            
+
             //Send join request to server.
-            SendMessageToHost((_message.Join + "," + hud.GetRoomInput() + "," + connectionID));
-            
-                
-            
+            SendMessageToHost((Messages.Join + "," + hud.GetRoomInput() + "," + connectionID));
+
+
+
             //Tell UI to switch to game room - server already took care of data.
             hud.SwitchGameRoomScreen();
             hud.SetRoomName(roomName);
-            
-           
+
+
         }
-        else if (message[0] == _message.Create)
+        else if (message[0] == Messages.Create)
         {
             //After sending create message to server, server send message back to client.
-            
+
             //Assign values from message for clarity
             string room_Name = message[1];
             _currentRoom = room_Name;
-            
+
             //Tell UI to switch to game room - server already took care of data.
             hud.SwitchGameRoomScreen();
             hud.SetRoomName(room_Name);
 
             //Instantiate fresh list to push strings inside - use this in PopulateRoomNames function. // UI LOOP
             List<string> playerIDs = new List<string>();
-            
+
             playerIDs.Add(message[2]);
-            
+
             //Pass player IDs to room names.
             hud.PopulateRoomNames(playerIDs);
-            
+
             playerIDs.Clear();
 
         }
-        else if (message[0] == _message.PlayerCount)
+        else if (message[0] == Messages.PlayerCount)
         {
             hud.UpdatePlayersOnlineCount(Convert.ToInt32(message[1]));
         }
-        else if (message[0] == _message.Joined)
+        else if (message[0] == Messages.Joined)
         {
-            
+
             Debug.Log("Joined : " + message[1] + " : " + message[2]);
-            
-            
+
+
             //Instantiate fresh list to push strings inside - use this in PopulateRoomNames function. // UI LOOP
             List<string> playerIDs = new List<string>();
-            
+
             //Grab player IDS passed from server(info from gameroom) and pass into list to give to UI function.
-                    playerIDs.Add(message[2]);
-                    playerIDs.Add(message[3]);
-                    
-                    //Pass player IDs to room names.
-                    hud.PopulateRoomNames(playerIDs);
-                    //hud.PopulateGameBoard(message[4],message[5], message[6],message[7],message[8],message[9],message[10],message[11],message[12])
-                   
-                    playerIDs.Clear();
+            playerIDs.Add(message[2]);
+            playerIDs.Add(message[3]);
+
+            //Pass player IDs to room names.
+            hud.PopulateRoomNames(playerIDs);
+            //hud.PopulateGameBoard(message[4],message[5], message[6],message[7],message[8],message[9],message[10],message[11],message[12])
+
+            playerIDs.Clear();
         }
-        else if (message[0] == _message.Leave)
+        else if (message[0] == Messages.Leave)
         {
             Debug.Log(message[2] + " Player : Left the game");
             _currentRoom = "";
@@ -260,10 +274,10 @@ public class NetworkedClient : MonoBehaviour
             hud.ResetRoomHUD();
             hud.RemoveRoomName(message[2]);
         }
-        else if (message[0] == _message.MakeMove)
+        else if (message[0] == Messages.MakeMove)
         {
             //makemove[0] , boardposition[1] , identity[2]
-            
+
             foreach (var tile in TTT_Tiles)
             {
                 Debug.Log("Comparing : " + message[1] + " : " + tile.boardPosition);
@@ -275,20 +289,20 @@ public class NetworkedClient : MonoBehaviour
                 }
             }
         }
-        else if (message[0] == _message.Message)
+        else if (message[0] == Messages.MessageC)
         {
 
             var player = ("Player " + message[2] + " : ");
-            
+
             hud.AddChatMessage((player + message[1]));
         }
-        else if (message[0] == _message.GameStart)
+        else if (message[0] == Messages.GameStart)
         {
             if (message[1] == identifier.O.ToString())
             {
                 identity = identifier.O;
             }
-            else if(message[1] == identifier.X.ToString())
+            else if (message[1] == identifier.X.ToString())
             {
                 identity = identifier.X;
             }
@@ -296,13 +310,22 @@ public class NetworkedClient : MonoBehaviour
             {
                 identity = identifier.N;
             }
-    
-            SendMessageToHost(_message.GameStart + "," + _currentRoom);
-    
+
+            SendMessageToHost(Messages.GameStart + "," + _currentRoom);
+
         }
-        else if (message[0] == _message.GameWon)
+        else if (message[0] == Messages.GameWon)
         {
             hud.ResetRoomHUD();
+        }
+        else if (message[0] == Messages.GetReplays)
+        {
+            //RECEIVED INFO
+            //_message.GetReplays + ","  + roomName + "," + winner + "," + move.pos + "," + move.identifier, id
+            
+            
+            
+            
         }
 
     }
@@ -310,29 +333,53 @@ public class NetworkedClient : MonoBehaviour
 
     public void MakeMove(int position)
     {
-        
+
     }
+
     public void RecieveMessage()
     {
-        
+
     }
+
     public void LeaveGame()
     {
         hud.OnLoggedInScreen();
-        SendMessageToHost(_message.Leave + "," + _currentRoom + "," + connectionID);
-        
+        SendMessageToHost(Messages.Leave + "," + _currentRoom + "," + connectionID);
+
         hud.ResetRoomHUD();
     }
+
     public void CreateRoom()
     {
         _currentRoom = hud.GetRoomInput();
-        SendMessageToHost((_message.Create + "," + hud.GetRoomInput() + "," + connectionID));
-        
+        SendMessageToHost((Messages.Create + "," + hud.GetRoomInput() + "," + connectionID));
 
+
+    }
+
+    public void GetReplay()
+    {
+        //Send message to server - We want all the replays.
+        SendMessageToHost(Messages.GetReplays);
+        
+    }
+
+
+
+    public void AddReplay()
+    {
+        
+        
+        
+        //Hud.PopulateList();
+        
     }
     
     
-    public bool IsConnected()
+    
+    
+
+public bool IsConnected()
     {
         return isConnected;
     }
@@ -359,6 +406,7 @@ public class NetworkedClient : MonoBehaviour
     //-----------------------------------------------------------------
     
     //Create the account file and set appropriate variables.
+    //Transition to server.
     public void CreateAccount()
     {
         Debug.Log("Creating account");
@@ -390,6 +438,7 @@ public class NetworkedClient : MonoBehaviour
     }
 
     //Check user input against file to determine whether login is successful, then set state if success.
+    //Transition to server.
     public void LoginAccount()
     {
         bool nameCorrect = false;
@@ -398,7 +447,7 @@ public class NetworkedClient : MonoBehaviour
         string saveFilePath = Application.persistentDataPath + "/account.sav";
         var fileInfo = Directory.GetFiles(Application.persistentDataPath);
 
-
+            
         if (fileInfo.Length <= 0)
             return;
         
@@ -535,4 +584,33 @@ public class NetworkedClient : MonoBehaviour
     }
     
     //End getters and setters----------------------------------------
+}
+public struct Move
+{
+
+    public Move(string position, string id)
+    {
+        pos = position;
+        identifier = id;
+    }
+    
+    
+    public string pos;
+    public string identifier;
+}
+
+public struct Replay
+{
+    public List<Move> moves;
+    public Replay(string position, string id)
+    {
+        moves = new List<Move>();
+        
+        pos = position;
+        identifier = id;
+    }
+    
+    
+    public string pos;
+    public string identifier;
 }
