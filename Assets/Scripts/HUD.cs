@@ -336,6 +336,9 @@ public class HUD : MonoBehaviour
         
 
     }
+    
+    
+  
 
     public void SwitchReplayScreen()
     {
@@ -379,6 +382,7 @@ public class HUD : MonoBehaviour
         createAccountPanel.SetActive(false);
         loginPanel.SetActive(false);
         gameRoomPanel.SetActive(false);
+        replayPanel.SetActive(false);
         loggedInPanel.SetActive(false);
         
         
