@@ -27,6 +27,9 @@ public class Messages
    public string GameWon = "Won";
 
    public static string GetReplays = "Replays";
-
    
+   public string CreateAccount = "CreateAccount";
+
+   public string LoginAccount = "LoginAccount";
+
 }

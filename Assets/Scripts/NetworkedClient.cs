@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.Networking.Match;
@@ -13,8 +14,11 @@ using UnityEngine.TestTools;
 using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
+[RequireComponent(typeof(PlayerData))]
 public class NetworkedClient : MonoBehaviour
 {
+    #region Network Variables
+
     int connectionID;
     int maxConnections = 1000;
     int reliableChannelID;
@@ -25,25 +29,32 @@ public class NetworkedClient : MonoBehaviour
     bool isConnected = false;
     int ourClientID;
 
+    public identifier identity;
+    public string _currentRoom;
+
     public Messages Messages;
-    public StateMachine _currentState;
 
+    #endregion
 
-    public Transform BoardParent;
-    public BoardTile[] TTT_Tiles;
-
+    #region Replay
 
     public Transform Replay_BoardParent;
     public BoardTile[] Replay_TTT_Tiles;
 
-
-
     public List<Replay> replays;
-    
-    
-    public identifier identity;
 
-    public string _currentRoom;
+    string currentReplay = "";
+
+    #endregion
+
+
+    public StateMachine _currentState;
+
+    //Can transition to HUD -> Possibly wrap this in a separate class -> init the TTT_Tiles with constructor and hold a reference to it in HUD class.
+    public Transform BoardParent;
+    public BoardTile[] TTT_Tiles;
+
+
 
 
     [SerializeField] public HUD hud;
@@ -51,29 +62,30 @@ public class NetworkedClient : MonoBehaviour
     //Current account credentials local
     protected string accountName;
 
-    protected string accountPassword;
-    
-    
-    string currentReplay = "";
+    //protected string accountPassword;
+
+    private PlayerData _playerData;
+
     //Is connection id
     protected int accountID;
-
-    //Used for input on login screen
-    protected string LoginInputName;
-    protected string LoginInputPassword;
-
-    //booleans for account creation screen
-    protected bool AccountNameSet = false;
-    protected bool AccountPasswordSet = false;
-
-    //connected to account creation booleans
-    protected bool CanCreate = true;
-
 
     //roomName local
     protected string roomName;
 
-    public bool isO;
+
+    //Used for input on login screen
+    //protected string LoginInputName;
+    //protected string LoginInputPassword;
+
+    //booleans for account creation screen
+    //protected bool AccountNameSet = false;
+    //protected bool AccountPasswordSet = false;
+
+    //connected to account creation booleans
+    //protected bool CanCreate = true;
+
+
+
 
 
     public void SetState(StateMachine state)
@@ -82,18 +94,29 @@ public class NetworkedClient : MonoBehaviour
         _currentState = state;
         _currentState.Start();
     }
+//----------------------------------------------------------
 
 
-    // Start is called before the first frame update
+    #region Unity Functions
+
+// Start is called before the first frame update
     void Start()
     {
-        
-      
+
+
         Debug.Log(Application.persistentDataPath);
 
         TTT_Tiles = BoardParent.GetComponentsInChildren<BoardTile>();
         Replay_TTT_Tiles = Replay_BoardParent.GetComponentsInChildren<BoardTile>();
-
+        
+        
+        _playerData = this.GetComponentInChildren<PlayerData>();
+        
+        if (_playerData == null)
+        {
+            this.AddComponent<PlayerData>();
+            _playerData = this.GetComponentInChildren<PlayerData>();
+        }
 
         for (int i = 0; i < TTT_Tiles.Length; i++)
         {
@@ -103,15 +126,15 @@ public class NetworkedClient : MonoBehaviour
 
 
         Messages = new Messages();
-        
+
         //Get replays.
-        
+
 
         Connect();
         SetState(new CreateAccountState(this));
 
         replays = new List<Replay>();
-        
+
     }
 
     // Update is called once per frame
@@ -122,6 +145,12 @@ public class NetworkedClient : MonoBehaviour
 
         UpdateNetworkConnection();
     }
+
+
+    #endregion
+    
+
+    #region Networking Functions
 
     private void UpdateNetworkConnection()
     {
@@ -179,7 +208,7 @@ public class NetworkedClient : MonoBehaviour
             Debug.Log("Socket open.  Host ID = " + hostID);
 
             connectionID =
-                NetworkTransport.Connect(hostID, "192.168.2.11", socketPort, 0,
+                NetworkTransport.Connect(hostID, "10.0.238.71", socketPort, 0,
                     out error); // server is local on network
 
             if (error == 0)
@@ -308,6 +337,7 @@ public class NetworkedClient : MonoBehaviour
 
             hud.AddChatMessage((player + message[1]));
         }
+        
         else if (message[0] == Messages.GameStart)
         {
             if (message[1] == identifier.O.ToString())
@@ -334,18 +364,18 @@ public class NetworkedClient : MonoBehaviour
         {
             //RECEIVED INFO
             //_message.GetReplays + ","  + roomName + "," + winner + "," + move.pos + "," + move.identifier, id
-           
+
 
             Debug.Log("REPLAY MOVE : " + message[0] + ", " + message[1] + "," + message[3] + "," + message[4]);
 
             if (message[1] != currentReplay)
             {
-                Debug.Log(message[1] + "COmpared to :" + currentReplay);
+                Debug.Log(message[1] + "Compared to :" + currentReplay);
                 currentReplay = message[1];
                 replays.Add(new Replay(message[2], message[1]));
                 hud.AddReplay(message[1]);
             }
-            
+
             if (replays.Count > 0)
             {
                 foreach (var replay in replays)
@@ -357,19 +387,73 @@ public class NetworkedClient : MonoBehaviour
                 }
             }
         }
+        else if (message[0] == Messages.CreateAccount)
+        {
+            if (message[1] == "1")
+            {
+                hud.SetUIText("Success");
+                hud.SwitchLogInScreen();
+            }
+            else
+            {
+                hud.SetUIText("Account Already Exists");
+            }
+        }
+        else if (message[0] == Messages.LoginAccount)
+        {
+            if (message[1] == "1")
+            {
+                hud.SetUITextLogin("Success");
+                hud.SwitchStartScreen();
+            }
+            else
+            {
+                hud.SetUITextLogin("Invalid Credentials");
+            }
+        }
+
 
     }
 
+    
 
-    public void MakeMove(int position)
+    #endregion
+
+
+    #region Getters and Setters
+    
+    public bool IsConnected()
     {
-
+        return isConnected;
     }
-
-    public void RecieveMessage()
+    public string RoomName
     {
-
+        get { return roomName; }
+        set { roomName = value; }
     }
+    
+
+    public int AccountID
+    {
+        get { return accountID; }
+        set { accountID = value; }
+    }
+
+    public int ConnectionID
+    {
+        get { return connectionID; }
+        set { connectionID = value; }
+    }
+    
+
+    //End getters and setters----------------------------------------
+
+
+
+    #endregion
+
+
+    #region User Action Functions
 
     public void LeaveGame()
     {
@@ -391,255 +475,57 @@ public class NetworkedClient : MonoBehaviour
     {
         //Send message to server - We want all the replays.
         SendMessageToHost(Messages.GetReplays);
-        
+
     }
 
 
 
     public void AddReplay()
     {
-        
-        
-        
+
+
+
         //Hud.PopulateList();
-        
-    }
-    
-    
-    
-    
 
-public bool IsConnected()
-    {
-        return isConnected;
     }
 
-    
-    //State machine virtual functions-----------------------------
-    public void OnSubmitName()
-    {
-        StartCoroutine(_currentState.SetName());
-    }
-    
-    public void OnSubmitPassword()
-    {
-        StartCoroutine(_currentState.SetPassword());
-    }
-    
-    public void Check()
-    {
-        StartCoroutine(_currentState.CheckAccount());
-    }
-    
-       
-   
-    //-----------------------------------------------------------------
-    
-    //Create the account file and set appropriate variables.
-    //Transition to server.
-    public void CreateAccount()
-    {
-        Debug.Log("Creating account");
-        if (!CanCreate)
-            return;
-        
-        Debug.Log("Successfull");
-        
-        
-        string filePath = Application.persistentDataPath + "/" + accountName + ".sav";
 
-        if (File.Exists(filePath))
+    #endregion
+    
+    
+    #region Structs
+
+    public struct Move
+    {
+
+        public Move(string position, string id)
         {
-            Debug.Log("User already exists");
-            return;
+            pos = position;
+            identifier = id;
         }
-            
-        
-        StreamWriter sw = new StreamWriter(filePath);
-        sw.WriteLine("name" + "," + accountName);
-        sw.WriteLine("password" + "," + accountPassword);
-        sw.WriteLine("clientID" + "," + ourClientID);
-        sw.WriteLine("UniqueID" + Random.Range(1000, 3000));
-        
-        sw.Close();
-        
-        hud.SetUIText("Account Created");
-        CreateLoginScreen();
+
+
+        public string pos;
+        public string identifier;
     }
 
-    //Check user input against file to determine whether login is successful, then set state if success.
-    //Transition to server.
-    public void LoginAccount()
+    public struct Replay
     {
-        bool nameCorrect = false;
-        bool passwordCorrect = false;
-        
-        string saveFilePath = Application.persistentDataPath + "/account.sav";
-        var fileInfo = Directory.GetFiles(Application.persistentDataPath);
+        public List<Move> moves;
 
-            
-        if (fileInfo.Length <= 0)
-            return;
-        
-        foreach (var file in fileInfo)
+        public Replay(string winner, string roomname)
         {
-            StreamReader sr = new StreamReader(file);
-
-            string line;
-
-            while ((line = sr.ReadLine()) != null)
-            {
-                string[] stats = line.Split(',');
-            
-                if (stats[0] == "name")
-                {
-                    if (stats[1] == AccountNameInput)
-                    {
-                        nameCorrect = true;
-                    }
-                }
-                else if (stats[0] == "password")
-                {
-                    if (stats[1] == AccountPasswordInput)
-                    {
-                        passwordCorrect = true;
-                    }
-                }
-            }
-
-            if (nameCorrect && passwordCorrect)
-            {
-                SetState(new LoggedInState(this));
-                break;
-            }
-            
-            sr.Close();
+            moves = new List<Move>();
+            this.roomname = roomname;
+            this.winner = winner;
         }
-        
-        
-        hud.SetUITextLogin("Incorrect Credentials");
-
-        
-    }
-    
 
 
-    //Creating and Logging into account functionality + helper functions
-    public void LoginName()
-    {
-        AccountNameInput = hud.GetLoginNameInput();
-    }
-    
-    public void LoginPassword()
-    {
-        AccountPasswordInput = hud.GetLoginPasswordInput();
-    }
-    
-    public void CreateAccountScreen()
-    {
-        hud.SwitchCreateAccountScreen();
-    }
-    
-    public void CreateLoginScreen()
-    {
-        hud.SwitchLogInScreen();
-    }
-
-   
-    
-    //Getters and setters--------------------------------------------
-    
-    void ResetVariables()
-    {
-        NameSet = false;
-        PasswordSet = false;
-    }
-    public string RoomName
-    {
-        get { return roomName; }
-        set { roomName = value;  }
-    }
-    public string AccountName
-    {
-        get { return accountName; }
-        set { accountName = value; }
-    }
-    
-    public string AccountNameInput
-    {
-        get { return LoginInputName; }
-        set { LoginInputName = value; }
-    }
-    
-    public int AccountID
-    {
-        get { return accountID; }
-        set { accountID = value; }
-    }
-    
-    public int ConnectionID
-    {
-        get { return connectionID; }
-        set { connectionID = value; }
-    }
-    
-    public string AccountPasswordInput
-    {
-        get { return LoginInputPassword; }
-        set { LoginInputPassword = value; }
-    }
-    
-    public bool canCreateAccount
-    {
-        get { return CanCreate; }
-        set { CanCreate = value; }
-    }
-    
-    public string AccountPassword
-    {
-        get { return accountPassword; }
-        set { accountPassword = value; }
-    }
-    
-    public bool NameSet
-    {
-        get { return AccountNameSet; }
-        set { AccountNameSet = value; }
-    }
-
-    public bool PasswordSet
-    {
-        get { return AccountPasswordSet; }
-        set { AccountPasswordSet = value; }
-    }
-    
-    //End getters and setters----------------------------------------
-}
-public struct Move
-{
-
-    public Move(string position, string id)
-    {
-        pos = position;
-        identifier = id;
-    }
-    
-    
-    public string pos;
-    public string identifier;
-}
-
-public struct Replay
-{
-    public List<Move> moves;
-    public Replay(string winner, string roomname)
-    {
-        moves = new List<Move>();
-        this.roomname = roomname;
-        this.winner = winner;
+        public string roomname;
+        public string winner;
     }
 
 
-    public string roomname;
-    public string winner;
+    #endregion
+
 }

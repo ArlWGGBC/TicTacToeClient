@@ -24,22 +24,23 @@ public class CreateAccountState : StateMachine
     }
 
 
+    /*
     public override IEnumerator SetName()
     {
         _system.AccountName = _system.hud.GetNameInput();
         _system.NameSet = true;
         yield return new WaitForSeconds(2f);
-    }
+    }*/
     
-    public override IEnumerator SetPassword()
+    /*public override IEnumerator SetPassword()
     {
         _system.AccountPassword = _system.hud.GetPasswordInput();
         _system.PasswordSet = true;
         yield return new WaitForSeconds(2f);
-    }
+    }*/
     
 
-    public override IEnumerator CheckAccount()
+    /*public override IEnumerator CheckAccount()
     {
         
         Debug.Log("Checking");
@@ -54,7 +55,7 @@ public class CreateAccountState : StateMachine
         
             
         yield return new WaitForSeconds(2f);
-    }
+    }*/
 
 
 

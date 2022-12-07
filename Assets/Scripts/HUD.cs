@@ -36,13 +36,13 @@ public class HUD : MonoBehaviour
     
     [SerializeField] private TMP_InputField roomInputField;
     
-    [SerializeField] private TMP_InputField nameInputField;
+    [SerializeField] public TMP_InputField nameInputField;
 
-    [SerializeField] private TMP_InputField passwordInputField;
+    [SerializeField] public TMP_InputField passwordInputField;
     
-    [SerializeField] private TMP_InputField nameLoginInputField;
+    [SerializeField] public TMP_InputField nameLoginInputField;
 
-    [SerializeField] private TMP_InputField passwordLoginInputField;
+    [SerializeField] public TMP_InputField passwordLoginInputField;
 
     [SerializeField] private GameObject createAccountPanel;
 
@@ -198,7 +198,7 @@ public class HUD : MonoBehaviour
     }
     
     
-    IEnumerator ReplayMove(Replay replay)
+    IEnumerator ReplayMove(NetworkedClient.Replay replay)
     {
         foreach (var move in replay.moves)
         {
@@ -213,6 +213,7 @@ public class HUD : MonoBehaviour
             }
         }
     }
+    
     public void RemoveRoomName(string id)
     {
         foreach (var player in PlayerNameSlots)
@@ -294,21 +295,7 @@ public class HUD : MonoBehaviour
     {
         return _textbox.text;
     }
-
-    public string GetPasswordInput()
-    {
-        return passwordInputField.text;
-    }
     
-    public string GetLoginNameInput()
-    {
-        return nameLoginInputField.text;
-    }
-
-    public string GetLoginPasswordInput()
-    {
-        return passwordLoginInputField.text;
-    }
 
     public void SwitchCreateAccountScreen()
     {
@@ -387,6 +374,16 @@ public class HUD : MonoBehaviour
         
         
         
+    }
+
+    public void SwitchLoggedInScreen()
+    {
+        startPanel.SetActive(false);
+        createAccountPanel.SetActive(false);
+        loginPanel.SetActive(false);
+        gameRoomPanel.SetActive(false);
+        replayPanel.SetActive(false);
+        loggedInPanel.SetActive(true);
     }
 
     
