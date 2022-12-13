@@ -28,7 +28,7 @@ public class TextInputBox : MonoBehaviour
                     return;
                 
                 Debug.Log("Player Sent Message");
-                _client.SendMessageToHost(_client.Messages.MessageC + "," +_client._currentRoom  + "," + hud.GetTextBoxInput() + "," + _client.ConnectionID);
+                _client.SendMessageToHost(Messages.MessageC + "," +_client._currentRoom  + "," + hud.GetTextBoxInput() + "," + _client.ConnectionID);
                 canSendMessage = false;
                 StartCoroutine(MessageDelay());
             }

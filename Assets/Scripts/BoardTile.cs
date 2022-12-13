@@ -39,7 +39,7 @@ public class BoardTile : MonoBehaviour
 
     public void MakeMove()
     {
-        client.SendMessageToHost(client.Messages.MakeMove + "," + client._currentRoom + "," + client.identity + "," + boardPosition);
+        client.SendMessageToHost(Messages.MakeMove + "," + client._currentRoom + "," + client.identity + "," + boardPosition);
     }
     
     public void SetTile(string identifier)

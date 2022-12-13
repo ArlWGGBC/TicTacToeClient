@@ -59,6 +59,16 @@ public class HUD : MonoBehaviour
     [SerializeField] private CustomDropdown replayDropdown;
 
     [SerializeField] private Sprite icon;
+    
+    
+    
+    
+    public Transform Replay_BoardParent;
+    public BoardTile[] Replay_TTT_Tiles;
+
+    //Can transition to HUD -> Possibly wrap this in a separate class -> init the TTT_Tiles with constructor and hold a reference to it in HUD class.
+    public Transform BoardParent;
+    public BoardTile[] TTT_Tiles;
 
     #endregion
     
@@ -86,6 +96,17 @@ public class HUD : MonoBehaviour
         foreach (var messageSlot in MessageSlots)
         {
             textBox.Add(messageSlot);
+        }
+        
+        
+        
+        TTT_Tiles = BoardParent.GetComponentsInChildren<BoardTile>();
+        Replay_TTT_Tiles = Replay_BoardParent.GetComponentsInChildren<BoardTile>();
+        
+        for (int i = 0; i < TTT_Tiles.Length; i++)
+        {
+            TTT_Tiles[i].boardPosition = i + 1;
+            Replay_TTT_Tiles[i].boardPosition = i + 1;
         }
     }
 
@@ -188,7 +209,7 @@ public class HUD : MonoBehaviour
         
        string replayName =  replayDropdown.items[value].itemName;
 
-       foreach (var replay in _client.replays)
+       foreach (var replay in _client._Processing.replays)
        {
            if (replayName != replay.roomname) continue;
 
@@ -198,13 +219,13 @@ public class HUD : MonoBehaviour
     }
     
     
-    IEnumerator ReplayMove(NetworkedClient.Replay replay)
+    IEnumerator ReplayMove(Replay replay)
     {
         foreach (var move in replay.moves)
         {
             yield return new WaitForSeconds(1f);
             
-            foreach (var tile in _client.Replay_TTT_Tiles)
+            foreach (var tile in Replay_TTT_Tiles)
             {
                 if (Convert.ToInt32(move.pos) == tile.boardPosition)
                 {
@@ -237,7 +258,7 @@ public class HUD : MonoBehaviour
             player.isFilled = false;
         }
 
-        foreach (var tiles in _client.TTT_Tiles)
+        foreach (var tiles in TTT_Tiles)
         {
             tiles.SetTile(identifier.N.ToString());
             tiles.isBlank = true;
@@ -249,7 +270,7 @@ public class HUD : MonoBehaviour
 
     public void ResetTicTacBoard()
     {
-        foreach (var tiles in _client.TTT_Tiles)
+        foreach (var tiles in TTT_Tiles)
         {
             tiles.SetTile(identifier.N.ToString());
             tiles.isBlank = true;
@@ -258,7 +279,7 @@ public class HUD : MonoBehaviour
     
     public void ResetReplayBoard()
     {
-        foreach (var tiles in _client.Replay_TTT_Tiles)
+        foreach (var tiles in Replay_TTT_Tiles)
         {
             tiles.SetTile(identifier.N.ToString());
             tiles.isBlank = true;

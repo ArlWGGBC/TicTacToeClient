@@ -65,7 +65,7 @@ public class PlayerData : MonoBehaviour
             return;
         }
         
-        _client.SendMessageToHost(_client.Messages.CreateAccount + "," + Name + "," + Password);
+        _client.SendMessageToHost(_client._Processing.Messages.CreateAccount + "," + Name + "," + Password);
     }
 
     public void LoginAccount()
@@ -82,7 +82,7 @@ public class PlayerData : MonoBehaviour
             return;
         }
         
-        _client.SendMessageToHost(_client.Messages.LoginAccount + "," + Name + "," + Password);
+        _client.SendMessageToHost(_client._Processing.Messages.LoginAccount + "," + Name + "," + Password);
     }
     
     

@@ -32,62 +32,32 @@ public class NetworkedClient : MonoBehaviour
     public identifier identity;
     public string _currentRoom;
 
-    public Messages Messages;
+    
 
     #endregion
-
-    #region Replay
-
-    public Transform Replay_BoardParent;
-    public BoardTile[] Replay_TTT_Tiles;
-
-    public List<Replay> replays;
-
-    string currentReplay = "";
-
-    #endregion
-
-
+    
+    #region Class References
+    
     public StateMachine _currentState;
-
-    //Can transition to HUD -> Possibly wrap this in a separate class -> init the TTT_Tiles with constructor and hold a reference to it in HUD class.
-    public Transform BoardParent;
-    public BoardTile[] TTT_Tiles;
-
-
-
-
+    
+    public MessageProcessing _Processing;
+    
     [SerializeField] public HUD hud;
+    
+    private PlayerData _playerData;
+    #endregion
+    
 
     //Current account credentials local
     protected string accountName;
-
-    //protected string accountPassword;
-
-    private PlayerData _playerData;
-
+    
     //Is connection id
     protected int accountID;
 
     //roomName local
-    protected string roomName;
+    public string roomName;
 
-
-    //Used for input on login screen
-    //protected string LoginInputName;
-    //protected string LoginInputPassword;
-
-    //booleans for account creation screen
-    //protected bool AccountNameSet = false;
-    //protected bool AccountPasswordSet = false;
-
-    //connected to account creation booleans
-    //protected bool CanCreate = true;
-
-
-
-
-
+    
     public void SetState(StateMachine state)
     {
 
@@ -98,43 +68,29 @@ public class NetworkedClient : MonoBehaviour
 
 
     #region Unity Functions
-
-// Start is called before the first frame update
+    
     void Start()
     {
 
-
-        Debug.Log(Application.persistentDataPath);
-
-        TTT_Tiles = BoardParent.GetComponentsInChildren<BoardTile>();
-        Replay_TTT_Tiles = Replay_BoardParent.GetComponentsInChildren<BoardTile>();
-        
-        
-        _playerData = this.GetComponentInChildren<PlayerData>();
+        _playerData = GetComponentInChildren<PlayerData>();
         
         if (_playerData == null)
         {
             this.AddComponent<PlayerData>();
-            _playerData = this.GetComponentInChildren<PlayerData>();
+            _playerData = GetComponentInChildren<PlayerData>();
         }
+        
+        _Processing = GetComponentInChildren<MessageProcessing>();
 
-        for (int i = 0; i < TTT_Tiles.Length; i++)
+        if (_Processing == null)
         {
-            TTT_Tiles[i].boardPosition = i + 1;
-            Replay_TTT_Tiles[i].boardPosition = i + 1;
+            this.AddComponent<MessageProcessing>();
+            _Processing = GetComponentInChildren<MessageProcessing>();
         }
-
-
-        Messages = new Messages();
-
-        //Get replays.
-
-
+ 
         Connect();
         SetState(new CreateAccountState(this));
-
-        replays = new List<Replay>();
-
+        
     }
 
     // Update is called once per frame
@@ -208,7 +164,7 @@ public class NetworkedClient : MonoBehaviour
             Debug.Log("Socket open.  Host ID = " + hostID);
 
             connectionID =
-                NetworkTransport.Connect(hostID, "10.0.238.71", socketPort, 0,
+                NetworkTransport.Connect(hostID, "192.168.2.11", socketPort, 0,
                     out error); // server is local on network
 
             if (error == 0)
@@ -241,178 +197,8 @@ public class NetworkedClient : MonoBehaviour
     {
         // message[0] == Signifier, message[1] == Room Name, message[2] == Room owner ID(player1)
 
-        string[] message = msg.Split(',', msg.Length);
-
-
-        if (message[0] == Messages.Join)
-        {
-            //Assign values from message for clarity
-            string room_Name = message[1];
-            _currentRoom = room_Name;
-
-            //Send join request to server.
-            SendMessageToHost((Messages.Join + "," + hud.GetRoomInput() + "," + connectionID));
-
-
-
-            //Tell UI to switch to game room - server already took care of data.
-            hud.SwitchGameRoomScreen();
-            hud.SetRoomName(roomName);
-
-
-        }
-        else if (message[0] == Messages.Create)
-        {
-            //After sending create message to server, server send message back to client.
-
-            //Assign values from message for clarity
-            string room_Name = message[1];
-            _currentRoom = room_Name;
-
-            //Tell UI to switch to game room - server already took care of data.
-            hud.SwitchGameRoomScreen();
-            hud.SetRoomName(room_Name);
-
-            //Instantiate fresh list to push strings inside - use this in PopulateRoomNames function. // UI LOOP
-            List<string> playerIDs = new List<string>();
-
-            playerIDs.Add(message[2]);
-
-            //Pass player IDs to room names.
-            hud.PopulateRoomNames(playerIDs);
-
-            playerIDs.Clear();
-
-        }
-        else if (message[0] == Messages.PlayerCount)
-        {
-            hud.UpdatePlayersOnlineCount(Convert.ToInt32(message[1]));
-        }
-        else if (message[0] == Messages.Joined)
-        {
-
-            Debug.Log("Joined : " + message[1] + " : " + message[2]);
-
-
-            //Instantiate fresh list to push strings inside - use this in PopulateRoomNames function. // UI LOOP
-            List<string> playerIDs = new List<string>();
-
-            //Grab player IDS passed from server(info from gameroom) and pass into list to give to UI function.
-            playerIDs.Add(message[2]);
-            playerIDs.Add(message[3]);
-
-            //Pass player IDs to room names.
-            hud.PopulateRoomNames(playerIDs);
-            //hud.PopulateGameBoard(message[4],message[5], message[6],message[7],message[8],message[9],message[10],message[11],message[12])
-
-            playerIDs.Clear();
-        }
-        else if (message[0] == Messages.Leave)
-        {
-            Debug.Log(message[2] + " Player : Left the game");
-            _currentRoom = "";
-            //Remove room name that was passed in.
-            hud.ResetRoomHUD();
-            hud.RemoveRoomName(message[2]);
-        }
-        else if (message[0] == Messages.MakeMove)
-        {
-            //makemove[0] , boardposition[1] , identity[2]
-
-            foreach (var tile in TTT_Tiles)
-            {
-                Debug.Log("Comparing : " + message[1] + " : " + tile.boardPosition);
-                if (Convert.ToInt32(message[1]) == tile.boardPosition)
-                {
-                    Debug.Log("Setting Tile : " + message[1] + " to : " + message[2]);
-                    tile.SetTile(message[2]);
-                    break;
-                }
-            }
-        }
-        else if (message[0] == Messages.MessageC)
-        {
-
-            var player = ("Player " + message[2] + " : ");
-
-            hud.AddChatMessage((player + message[1]));
-        }
+        _Processing.ProcessMessage(msg, id);
         
-        else if (message[0] == Messages.GameStart)
-        {
-            if (message[1] == identifier.O.ToString())
-            {
-                identity = identifier.O;
-            }
-            else if (message[1] == identifier.X.ToString())
-            {
-                identity = identifier.X;
-            }
-            else
-            {
-                identity = identifier.N;
-            }
-
-            SendMessageToHost(Messages.GameStart + "," + _currentRoom);
-
-        }
-        else if (message[0] == Messages.GameWon)
-        {
-            hud.ResetRoomHUD();
-        }
-        else if (message[0] == Messages.GetReplays)
-        {
-            //RECEIVED INFO
-            //_message.GetReplays + ","  + roomName + "," + winner + "," + move.pos + "," + move.identifier, id
-
-
-            Debug.Log("REPLAY MOVE : " + message[0] + ", " + message[1] + "," + message[3] + "," + message[4]);
-
-            if (message[1] != currentReplay)
-            {
-                Debug.Log(message[1] + "Compared to :" + currentReplay);
-                currentReplay = message[1];
-                replays.Add(new Replay(message[2], message[1]));
-                hud.AddReplay(message[1]);
-            }
-
-            if (replays.Count > 0)
-            {
-                foreach (var replay in replays)
-                {
-                    if (replay.roomname == currentReplay)
-                    {
-                        replay.moves.Add(new Move(message[3], message[4]));
-                    }
-                }
-            }
-        }
-        else if (message[0] == Messages.CreateAccount)
-        {
-            if (message[1] == "1")
-            {
-                hud.SetUIText("Success");
-                hud.SwitchLogInScreen();
-            }
-            else
-            {
-                hud.SetUIText("Account Already Exists");
-            }
-        }
-        else if (message[0] == Messages.LoginAccount)
-        {
-            if (message[1] == "1")
-            {
-                hud.SetUITextLogin("Success");
-                hud.SwitchStartScreen();
-            }
-            else
-            {
-                hud.SetUITextLogin("Invalid Credentials");
-            }
-        }
-
-
     }
 
     
@@ -426,12 +212,6 @@ public class NetworkedClient : MonoBehaviour
     {
         return isConnected;
     }
-    public string RoomName
-    {
-        get { return roomName; }
-        set { roomName = value; }
-    }
-    
 
     public int AccountID
     {
@@ -477,55 +257,12 @@ public class NetworkedClient : MonoBehaviour
         SendMessageToHost(Messages.GetReplays);
 
     }
-
-
-
-    public void AddReplay()
-    {
-
-
-
-        //Hud.PopulateList();
-
-    }
+    
 
 
     #endregion
     
     
-    #region Structs
-
-    public struct Move
-    {
-
-        public Move(string position, string id)
-        {
-            pos = position;
-            identifier = id;
-        }
-
-
-        public string pos;
-        public string identifier;
-    }
-
-    public struct Replay
-    {
-        public List<Move> moves;
-
-        public Replay(string winner, string roomname)
-        {
-            moves = new List<Move>();
-            this.roomname = roomname;
-            this.winner = winner;
-        }
-
-
-        public string roomname;
-        public string winner;
-    }
-
-
-    #endregion
+    
 
 }
